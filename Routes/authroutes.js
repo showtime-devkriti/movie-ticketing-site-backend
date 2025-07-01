@@ -7,6 +7,7 @@ const { usermiddleware } = require("../middlewares/authmiddleware");
 const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const authmiddleware = require("../middlewares/authmiddleware");
+const {ALLOWED_CITIES}=require("../constants/cities");
 
 authrouter.post("/register", async function (req, res) {
   const requiredbody = z.object({
@@ -19,6 +20,7 @@ authrouter.post("/register", async function (req, res) {
     username: z.string().regex(/^[a-zA-Z0-9._-]{3,20}$/),
     phonenumber: z.string().regex(/^[6-9]\d{9}$/),
     fullname: z.string().max(30),
+    location:z.enum(ALLOWED_CITIES)
   });
 
   const parsed = requiredbody.safeParse(req.body); 
