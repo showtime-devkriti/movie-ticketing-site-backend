@@ -1,8 +1,8 @@
-const { ObjectId } = require("bson");
-const mongoose = require("mongoose"); 
-const { ALLOWED_CITIES } = require("../constants/cities");
-const {Schema}=require("mongoose");
+
 const mongoose = require("mongoose");
+const { ALLOWED_CITIES } = require("../constants/cities");
+const { Schema } = mongoose;;
+const { boolean } = require("zod/v4");
 const { ObjectId } = mongoose.Schema.Types;
 
 const userSchema = new mongoose.Schema({
@@ -14,28 +14,29 @@ const userSchema = new mongoose.Schema({
 
 
 
-const userschema= new Schema({
-    email:{type:String,unique:true},
-    password:String,
-    fullname:String,
-    username:{type:String,unique:true},
-    phonenumber:String,
-    location: {
+const userschema = new Schema({
+  email: { type: String, unique: true },
+  password: String,
+  fullname: String,
+  username: { type: String, unique: true },
+  phonenumber: { type: String, unique: true },
+   location: {
     type: String,
     enum: ALLOWED_CITIES,
     required: true
   },
-    bookingHistory: [ {
-    movieId: mongoose.Schema.Types.ObjectId, 
-    theatreId: mongoose.Schema.Types.ObjectId, 
+
+  bookingHistory: [{
+    movieId: mongoose.Schema.Types.ObjectId,
+    theatreId: mongoose.Schema.Types.ObjectId,
     showtime: Date,
-    seats: [String], 
-    ticketType: String, 
+    seats: [String],
+    ticketType: String,
     price: Number,
     bookingDate: Date
   }],
-   friends: [{ type: ObjectId, ref: "User" }],
-   reviews: [
+  friends: [{ type: ObjectId, ref: "User" }],
+  reviews: [
     {
       movieId: { type: ObjectId, ref: "Movie" },
       rating: Number,
@@ -46,41 +47,51 @@ const userschema= new Schema({
 
 
 
-    
+
 
 })
-const movieschema= new Schema({
-     title: {
+
+
+
+const adminschema = new Schema({
+  theatretitle: String,
+  password:String,
+  location: {
     type: String,
+    enum: ALLOWED_CITIES,
     required: true
   },
-   rating: {
-    type: Number,
-    min: 0,
-    max: 10
-  },
-    Review:String,
-    genre:[String],
-    languages:[String],
-    cast:[String],
-    crew:[String],
-     trailerUrl: {
-    type: String
-  }, format: [String],
-  reviews: [
-    {
-      userId: { type: Schema.Types.ObjectId, ref: "User" },
-      reviewText: String,
-      rating: { type: Number, min: 1, max: 5 },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ]
+  email1: { type: String, unique: true },
+  email2: { type: String, unique: true },
+  phone1: { type: String, unique: true },
+  phone2: { type: String, unique: true },
+  adminusername: { type: String, unique: true },
+  paymentregistration: { type: Boolean, default: false },
+  screens: [{ type: ObjectId, ref: "Screen" }],
 
 
-},{ timestamps: true })
 
-const usermodel =mongoose.model("users",userschema);
-module.exports={
-    usermodel,
-    movieschema
+
+
+
+})
+// const screenschema = new Schema({
+//   movieId: { type: ObjectId, ref: "Movie" },
+//   format: { type: String, enum: ['2D', '3D', 'IMAX'] },//2d/3d/
+//   timings: [String],
+//   theatreId: { type: ObjectId, ref: "Admin" }
+
+
+
+// })
+
+const usermodel = mongoose.model("users", userschema);
+const adminmodel = mongoose.model("Admin", adminschema);
+// const screenmodel = mongoose.model("Screen", screenschema)
+module.exports = {
+  usermodel,
+ 
+  adminmodel,
+  // screenmodel
 }
+

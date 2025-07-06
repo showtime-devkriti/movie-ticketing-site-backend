@@ -3,10 +3,12 @@ const app=express();
 const mongoose = require("mongoose"); 
 const {authrouter}=require("./Routes/authroutes")
 const {adminrouter}=require("./Routes/adminroutes")
+const {userrouter}=require("./Routes/userroutes")
 
 app.use(express.json());
 app.use("/api/auth",authrouter);
 app.use("/api/admin",adminrouter);
+app.use("/api/user",userrouter);
  
 
  async function main(){
