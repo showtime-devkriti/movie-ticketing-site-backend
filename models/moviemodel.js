@@ -28,10 +28,10 @@ const movieschema = new Schema({
   }, format: [{ type: String, enum: ['2D', '3D', 'IMAX'] }],
   reviews: [
     {
-      userId: { type: Schema.Types.ObjectId, ref: "users" },
+      userid: { type: Schema.Types.ObjectId, ref: "users" },
       reviewText: String,
       rating: { type: Number, min: 1, max: 5 },
-      createdAt: { type: Date, default: Date.now }
+      createdat: { type: Date, default: Date.now }
     }
   ]
 

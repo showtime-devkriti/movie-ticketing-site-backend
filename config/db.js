@@ -5,12 +5,7 @@ const { Schema } = mongoose;;
 const { boolean } = require("zod/v4");
 const { ObjectId } = mongoose.Schema.Types;
 
-const userSchema = new mongoose.Schema({
-  theatre: {
-    type: ObjectId,
-    ref: "Theatre"
-  }
-});
+
 
 
 
@@ -26,22 +21,22 @@ const userschema = new Schema({
     required: true
   },
 
-  bookingHistory: [{
-    movieId: mongoose.Schema.Types.ObjectId,
-    theatreId: mongoose.Schema.Types.ObjectId,
+  bookinghistory: [{
+    movieid: mongoose.Schema.Types.ObjectId,
+    theatreid: mongoose.Schema.Types.ObjectId,
     showtime: Date,
     seats: [String],
-    ticketType: String,
+    tickettype: String,
     price: Number,
-    bookingDate: Date
+    bookingdate: Date
   }],
   friends: [{ type: ObjectId, ref: "User" }],
   reviews: [
     {
-      movieId: { type: ObjectId, ref: "Movie" },
+      movieid: { type: ObjectId, ref: "Movie" },
       rating: Number,
-      reviewText: String,
-      createdAt: { type: Date, default: Date.now }
+      reviewtext: String,
+      createdat: { type: Date, default: Date.now }
     }
   ]
 
@@ -75,23 +70,15 @@ const adminschema = new Schema({
 
 
 })
-// const screenschema = new Schema({
-//   movieId: { type: ObjectId, ref: "Movie" },
-//   format: { type: String, enum: ['2D', '3D', 'IMAX'] },//2d/3d/
-//   timings: [String],
-//   theatreId: { type: ObjectId, ref: "Admin" }
 
-
-
-// })
 
 const usermodel = mongoose.model("users", userschema);
 const adminmodel = mongoose.model("Admin", adminschema);
-// const screenmodel = mongoose.model("Screen", screenschema)
+
 module.exports = {
   usermodel,
  
   adminmodel,
-  // screenmodel
+  
 }
 

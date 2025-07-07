@@ -9,6 +9,7 @@ app.use(express.json());
 app.use("/api/auth",authrouter);
 app.use("/api/admin",adminrouter);
 app.use("/api/user",userrouter);
+
  
 
  async function main(){

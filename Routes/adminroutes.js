@@ -4,7 +4,7 @@ const {adminregister,adminlogin}=require("../controllers/admincontroller");
 const {adminmodel}=require("../config/db");
 const { adminmiddleware } = require("../middlewares/adminmiddleware");
 const { addmovie,addshowtime,addscreen } = require("../controllers/admincontroller");
-
+const {showtimemiddleware}=require("../middlewares/showtimemiddleware")
 
 adminrouter.post("/registeradmin", adminregister);
 adminrouter.post("/login", adminlogin);
@@ -26,8 +26,10 @@ adminrouter.get("/profile",adminmiddleware,async function(req,res){
     res.status(500).json({ message: "Failed to fetch admin profile" });
   }
 });
-adminrouter.post("/showtime",adminmiddleware,addshowtime);
+adminrouter.post("/showtime",adminmiddleware,showtimemiddleware,addshowtime);
 adminrouter.post("/movies",adminmiddleware,addmovie);
+adminrouter.post("/screenpost",adminmiddleware,addscreen)
+
 
 
 
