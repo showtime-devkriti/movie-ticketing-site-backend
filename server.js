@@ -4,11 +4,15 @@ const mongoose = require("mongoose");
 const {authrouter}=require("./Routes/authroutes")
 const {adminrouter}=require("./Routes/adminroutes")
 const {userrouter}=require("./Routes/userroutes")
+const { movierouter }=require("./Routes/movieroutes")
+const { theatrerouter }=require("./Routes/theatreroutes")
 
 app.use(express.json());
 app.use("/api/auth",authrouter);
 app.use("/api/admin",adminrouter);
 app.use("/api/user",userrouter);
+app.use("/api/movies",movierouter)
+app.use("/api/theatres",theatrerouter)
 
  
 

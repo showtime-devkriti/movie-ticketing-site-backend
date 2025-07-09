@@ -17,8 +17,8 @@ const userregister= async function (req, res) {
       .regex(/[0-9]/), 
     username: z.string().regex(/^[a-zA-Z0-9._-]{3,20}$/),
     phonenumber: z.string().regex(/^[6-9]\d{9}$/),
-    fullname: z.string().max(30),
-    location:z.enum(ALLOWED_CITIES)
+    fullname: z.string().max(30)
+    
   });
 
   const parsed = requiredbody.safeParse(req.body); 
@@ -57,6 +57,7 @@ return res.status(409).json({ msg: "Username already taken" });
     });
     return res.status(201).json({ message: "Signup succeeded" });
   } catch (e) {
+     console.error("Signup error:", e);
     res.status(500).json({
       message: "Signup failed. Try again.",
     });

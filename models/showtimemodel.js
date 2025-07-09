@@ -21,12 +21,16 @@ const showtimeschema=new Schema({
 
 
 
+
 const showtimevalidation = z.object({
   movieid: z.string().length(24, "Invalid movie ID"), // MongoDB ObjectId
   language: z.string().min(1, "Language is required"),
   starttime: z.coerce.date().refine(date => !isNaN(date.getTime()), {
     message: "Invalid start time format"
-  }),
+  }).refine(
+    (date) => date >= new Date(),
+    { message: "Start time cannot be in the past" }
+  ),
   format: z.enum(["2D", "3D", "IMAX"]),
   screenid: z.string().length(24, "Invalid screen ID"),
   price: z.number().positive("Price must be a positive number"),

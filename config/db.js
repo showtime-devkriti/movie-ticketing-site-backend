@@ -17,8 +17,7 @@ const userschema = new Schema({
   phonenumber: { type: String, unique: true },
    location: {
     type: String,
-    enum: ALLOWED_CITIES,
-    required: true
+    enum: ALLOWED_CITIES
   },
 
   bookinghistory: [{
@@ -36,7 +35,7 @@ const userschema = new Schema({
       movieid: { type: ObjectId, ref: "Movie" },
       rating: Number,
       reviewtext: String,
-      createdat: { type: Date, default: Date.now }
+      createdate: { type: Date, default: Date.now }
     }
   ]
 
@@ -73,7 +72,7 @@ const adminschema = new Schema({
 
 
 const usermodel = mongoose.model("users", userschema);
-const adminmodel = mongoose.model("Admin", adminschema);
+const adminmodel = mongoose.model("admins", adminschema);
 
 module.exports = {
   usermodel,

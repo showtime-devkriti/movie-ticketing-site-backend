@@ -164,6 +164,14 @@ const addshowtime =async function(req,res){
     const {movieid,language,starttime,format,screenid,price,availableseats}=req.body;
     
   try {
+
+    const movie=await moviemodel.findById(movieid)
+    if(!movie){
+      return res.status(404).json({
+        message :"movie not found"
+
+      })
+    }
     
 
     const existingShow = await showtimemodel.findOne({
@@ -335,6 +343,11 @@ try {
     days,
     theatreid: adminid
   });
+  await adminmodel.findByIdAndUpdate(
+      adminid,
+      { $push: { screens: screen._id } },
+      { new: true }
+    );
   return res.status(201).json({
     message: "Screen added successfully",
     screen
