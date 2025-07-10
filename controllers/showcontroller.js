@@ -21,15 +21,35 @@ const userlocation = user.location;
     if (!userlocation) {
     return res.status(400).json({ msg: "User location is not set" });
   }
-  const todaydate=new Date().toISOString().split("T")[0];
-  const selectdate=date?date:todaydate;
-  const dayStart = new Date(selectdate);
-  const dayEnd = new Date(selectdate);
-  dayEnd.setUTCHours(23,59,59,999);
+  const now = new Date();
+  
+  
+  let start ,end;
+  
+  
+  if (!date) {
+  start = new Date();
+  
+  end = new Date();
+  end.setUTCHours(23, 59, 59, 999); // Ensure UTC time
+}else{
+      start = new Date(date);
+      const isToday =
+      start.toISOString().split("T")[0] === now.toISOString().split("T")[0];
+
+    if (isToday) {
+      start = now;
+    }
+
+
+        end = new Date(date);
+    end.setUTCHours(23, 59, 59, 999);
+  }
+  console.log("Filtering from:", start, "to:", end);
 
   const filter={
     movieid,
-    starttime:{ $gte: dayStart, $lte: dayEnd },
+    starttime:{ $gte: start, $lte: end },
   }
   if(format)filter.format=format;
   if(language)filter.language=language;

@@ -6,6 +6,7 @@ const {adminrouter}=require("./Routes/adminroutes")
 const {userrouter}=require("./Routes/userroutes")
 const { movierouter }=require("./Routes/movieroutes")
 const { theatrerouter }=require("./Routes/theatreroutes")
+const {additionalrouter}=require("./Routes/otherroutes")
 const cors = require("cors");
 
 app.use(cors({
@@ -19,6 +20,7 @@ app.use("/api/admin",adminrouter);
 app.use("/api/user",userrouter);
 app.use("/api/movies",movierouter)
 app.use("/api/theatres",theatrerouter)
+app.use("/api/home",additionalrouter)
 
 
 app.get("/api/message", (req, res) => {

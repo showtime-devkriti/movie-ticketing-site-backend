@@ -176,11 +176,21 @@ const addshowtime =async function(req,res){
 
       })
     }
-    
+      const screen = await screenmodel.findById(screenid);
+    if (!screen) {
+      return res.status(404).json({ message: "Screen not found" });
+    }
+
+    if (!screen.movieid.equals(movieid)) {
+      return res
+        .status(409)
+        .json({ message: "This screen is booked for another movie" });
+    }
+     const start = new Date(starttime);
 
     const existingShow = await showtimemodel.findOne({
   screenid: screenid,
-  starttime: new Date(starttime)
+  starttime: start
 });
 
 if (existingShow) {
@@ -190,21 +200,16 @@ if (existingShow) {
 }
 
     
-    const findscreen=await screenmodel.findById(screenid);
-    if(!findscreen){
-      return res.status(403).json({
-        message:"invalid screen id"
-      })
-    }
-    const start = new Date(starttime);
+    
+  
 const datePart = start.toISOString().split("T")[0];
 const timePart = start.toISOString().split("T")[1].substring(0,5); 
-if (!findscreen.days.includes(datePart)) {
+if (!screen.days.includes(datePart)) {
   return res.status(403).json({
     message: "Showtime date is not allowed on this screen"
   });
 }
-const timingMatch = findscreen.timings.find(t => {
+const timingMatch = screen.timings.find(t => {
   const tStr = new Date(t).toISOString().split("T")[1].substring(0,5);
   return tStr === timePart;
 });
@@ -213,62 +218,38 @@ if (!timingMatch) {
     message: "Showtime time is not available on this screen"
   });
 }
+if (!movie.languages.includes(language)) {
+      return res
+        .status(409)
+        .json({ message: "This movie is not available in that language" });
+    }
+ const showtime = await showtimemodel.create({
+      movieid,
+      language,
+      theatreid: adminid,
+      starttime: start,
+      format,
+      screenid,
+      price,
+      availableseats,
+    });
 
+    return res.status(201).json({ msg: "Showtime added", showtime });
   
 
     
   } catch (error) {
-     console.error("Find screen error:", error.message);
+     console.error("Find showtime error:", error.message);
     return res.status(500).json({
-      message:"failed to find screen"
+      message:"Something went wrong while adding showtime"
 
     })
     
   }
-  try {
-    const movie =await moviemodel.findById(movieid);
-    if(!movie){
-      return res.status(404).json({
-        message :"Invalid movieid"
-      })
-    }
-    const foundlang=movie.languages.includes(language)
-    if(!foundlang){
-      return res.status(409).json({
-        message:"the movie is not available in the given language"
-      })
-    }
-    
-  } catch (error) {
-    console.error("find lanaguage error:",error.message)
-    return res.status(500).json({
-      message:"failed to find screen"
-
-    })
-    
-  }
+ 
 
 
-  try{
-    const showtime=await showtimemodel.create({
-
-        movieid,
-        language,
-        theatreid:adminid,
-        starttime,
-        format,
-        screenid,
-        price,
-        availableseats
-    })
-    return res.status(201).json({msg:"showtime added",showtime})
-  }catch(err){
-     console.error("Add showtime error:", err);
-    return res.status(500).json({msg:"failed to add showtime"})
-  }
-
-
-    
+  
 }
 
 const addmovie=async function(req,res){
@@ -402,6 +383,32 @@ try {
 
 }
 
+const deleteshowtime = async (req, res) => {
+  const showtimeid = req.params.id;
+  const adminid = req.admin.id;
+
+  try {
+    const showtime = await showtimemodel.findById(showtimeid);
+    if (!showtime) {
+      return res.status(404).json({ msg: "Showtime not found" });
+    }
+
+   console.log(adminid)
+   console.log(showtime.theatreid)
+    if (showtime.theatreid.toString() !== adminid) {
+      return res.status(403).json({ msg: "Unauthorized to delete this showtime" });
+    }
+
+    await showtimemodel.findByIdAndDelete(showtimeid);
+
+    return res.status(200).json({ msg: "Showtime deleted successfully" });
+  } catch (err) {
+    console.error("Delete showtime error:", err.message);
+    return res.status(500).json({ msg: "Failed to delete showtime" });
+  }
+};
+
+
 
 
 
@@ -414,5 +421,5 @@ try {
 
 module.exports = {
   adminlogin,adminregister,addshowtime,addmovie,
-  addscreen
+  addscreen,deleteshowtime
 };
