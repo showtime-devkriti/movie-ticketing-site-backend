@@ -25,7 +25,27 @@ const movieschema = new Schema({
   crew: [String],
   trailerurl: {
     type: String
-  }, format: [{ type: String, enum: ['2D', '3D', 'IMAX'] }],
+  }, 
+  posterurl: {
+    type: String // from TMDB: `https://image.tmdb.org/t/p/w500${data.poster_path}`
+  },
+  backdropurl: {
+    type: String // from TMDB: `https://image.tmdb.org/t/p/original${data.backdrop_path}`
+  },
+  runtime: {
+    type: Number // from TMDB
+  },
+  releaseDate: {
+    type: Date // from TMDB: data.release_date
+  },
+  adult: {
+    type: Boolean,
+    default: false
+  },
+  popularity: {
+    type: Number
+  },
+  format: [{ type: String, enum: ['2D', '3D', 'IMAX'] }],
   reviews: [
     {
       userid: { type: Schema.Types.ObjectId, ref: "users" },

@@ -3,11 +3,15 @@ const {adminmodel}=require("../config/db");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const { z } = require("zod");
+const axios = require('axios');
 const authmiddleware = require("../middlewares/adminmiddleware");
 const {ALLOWED_CITIES}=require("../constants/cities");
 const {showtimemodel}=require("../models/showtimemodel")
 const {moviemodel}=require("../models/moviemodel")
 const {screenmodel}=require("../models/screenmodel")
+require('dotenv').config();
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+
 
 
 const adminregister=async function(req,res){
@@ -266,40 +270,33 @@ if (!timingMatch) {
 
     
 }
+
 const addmovie=async function(req,res){
-    
-     const movieschema = z.object({
-        imdbid: z.string().regex(/^tt\d{7,8}$/, "Invalid IMDb ID"),
-    title: z.string().min(1, "Title is required"),
-    rating: z.number().min(0).max(10).optional(),
-    genre: z.array(z.string()).optional(),
-    description: z.string().optional(),
-    format: z.array(z.enum(['2D', '3D', 'IMAX'])).min(1, "At least one format required"),
-    languages: z.array(z.string()).optional(),
-    cast: z.array(z.string()).optional(),
-    crew: z.array(z.string()).optional(),
-    trailerurl: z.string().url("Invalid trailer URL").optional()
+  const schema = z.object({
+    imdbid: z.string().regex(/^tt\d{7,8}$/, "Invalid IMDb ID")
   });
-   const parsed = movieschema.safeParse(req.body);
+
+    
+  //    const movieschema = z.object({
+  //       imdbid: z.string().regex(/^tt\d{7,8}$/, "Invalid IMDb ID"),
+  //   title: z.string().min(1, "Title is required"),
+  //   rating: z.number().min(0).max(10).optional(),
+  //   genre: z.array(z.string()).optional(),
+  //   description: z.string().optional(),
+  //   format: z.array(z.enum(['2D', '3D', 'IMAX'])).min(1, "At least one format required"),
+  //   languages: z.array(z.string()).optional(),
+  //   cast: z.array(z.string()).optional(),
+  //   crew: z.array(z.string()).optional(),
+  //   trailerurl: z.string().url("Invalid trailer URL").optional()
+  // });
+   const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
     const firstError = parsed.error.issues[0];
     return res.status(400).json({
       msg: firstError.message || "Invalid input"
     });
   }
-  const {
-imdbid,
-title,
-rating,
-review,
-genre,
-languages,
-description,
-cast,
-crew,
-trailerurl,
-format
-} = req.body;
+  const { imdbid } = req.body;
    try {
     const existingmovie = await moviemodel.findOne({ imdbid });
 if (existingmovie) {
@@ -308,11 +305,58 @@ message: "Movie already exists",
 movie: existingmovie
 });
 }
-    const movie = await moviemodel.create(parsed.data);
-  return res.status(201).json({
-      msg: "Movie added successfully",
-      movie
+const findRes = await axios.get(`https://api.themoviedb.org/3/find/${imdbid}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        external_source: 'imdb_id'
+      }
     });
+     const movieResult = findRes.data.movie_results[0];
+    if (!movieResult) {
+      return res.status(404).json({ msg: "Movie not found on TMDB" });
+    }
+       const detailsRes = await axios.get(`https://api.themoviedb.org/3/movie/${movieResult.id}`, {
+      params: {
+        api_key: TMDB_API_KEY,
+        append_to_response: 'credits,videos'
+      }
+    });
+        const data = detailsRes.data;
+         const trailer = data.videos.results.find(
+      v => v.type === 'Trailer' && v.site === 'YouTube'
+    );
+    const posterurl = data.poster_path
+  ? `https://image.tmdb.org/t/p/w500${data.poster_path}`
+  : undefined;
+
+const backdropurl = data.backdrop_path
+  ? `https://image.tmdb.org/t/p/original${data.backdrop_path}`
+  : undefined;
+    const trailerurl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : undefined;
+   const movieData = {
+      imdbid,
+      title: data.title,
+      rating: data.vote_average,
+      genre: data.genres.map(g => g.name),
+      description: data.overview,
+      format: ['2D','3D'], // Default format
+      languages: data.spoken_languages.map(lang => lang.english_name),
+      cast: data.credits.cast.slice(0, 5).map(actor => actor.name),
+      crew: data.credits.crew.slice(0, 5).map(member => member.name),
+      trailerurl,
+      posterurl,
+  backdropurl,
+  runtime: data.runtime,
+  releaseDate: data.release_date,
+  adult: data.adult,
+  popularity: data.popularity
+    };
+    const newMovie = await moviemodel.create(movieData);
+    return res.status(201).json({
+      msg: "Movie added successfully",
+      movie: newMovie
+    });
+
   } catch (err) {
     console.error("Add movie error:", err.message);
     return res.status(500).json({ msg: "Failed to add movie" });

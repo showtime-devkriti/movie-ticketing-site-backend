@@ -20,15 +20,7 @@ const userschema = new Schema({
     enum: ALLOWED_CITIES
   },
 
-  bookinghistory: [{
-    movieid: mongoose.Schema.Types.ObjectId,
-    theatreid: mongoose.Schema.Types.ObjectId,
-    showtime: Date,
-    seats: [String],
-    tickettype: String,
-    price: Number,
-    bookingdate: Date
-  }],
+ bookinghistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "bookings" }],
   friends: [{ type: ObjectId, ref: "User" }],
   reviews: [
     {

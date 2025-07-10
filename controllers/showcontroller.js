@@ -22,10 +22,10 @@ const userlocation = user.location;
     return res.status(400).json({ msg: "User location is not set" });
   }
   const todaydate=new Date().toISOString().split("T")[0];
-    const selectdate=date?date:todaydate;
-    const dayStart = new Date(selectdate);
+  const selectdate=date?date:todaydate;
+  const dayStart = new Date(selectdate);
   const dayEnd = new Date(selectdate);
-  dayEnd.setHours(23,59,59,999);
+  dayEnd.setUTCHours(23,59,59,999);
 
   const filter={
     movieid,

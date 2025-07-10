@@ -55,6 +55,7 @@ const getalltheatres = async function (req, res) {
     return res.status(500).json({ message: "Failed to fetch theatres" });
   }
 };
+            
 const theatreById=async function(req,res){
      const filter = {};
   const { theatreid } = req.params;
@@ -99,8 +100,7 @@ const theatreById=async function(req,res){
         path:"screenid",
        model:"screens",
        });
-       
-        
+          
 const grouped = {};
 for(let show of showtimes){
     const moviekey=show.movieid._id;
