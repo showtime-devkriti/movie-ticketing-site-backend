@@ -6,6 +6,7 @@ const { z } = require("zod");
 const axios = require('axios');
 const authmiddleware = require("../middlewares/adminmiddleware");
 const {ALLOWED_CITIES}=require("../constants/cities");
+const { bigLayout1, bigLayout2, bigLayout3, bigLayout4 }=require("../constants/seatlayouts")
 const {showtimemodel}=require("../models/showtimemodel")
 const {moviemodel}=require("../models/moviemodel")
 const {screenmodel}=require("../models/screenmodel")
@@ -165,7 +166,7 @@ username: admin.adminusername
 
 const addshowtime =async function(req,res){
     const adminid=req.admin.id;
-    const {movieid,language,starttime,format,screenid,price,availableseats}=req.body;
+    const {movieid,language,starttime,format,screenid,price}=req.body;
     
   try {
 
@@ -177,10 +178,11 @@ const addshowtime =async function(req,res){
       })
     }
       const screen = await screenmodel.findById(screenid);
+      
     if (!screen) {
       return res.status(404).json({ message: "Screen not found" });
     }
-
+const seatIds = screen.seats.map(seat => seat.seatid);
     if (!screen.movieid.equals(movieid)) {
       return res
         .status(409)
@@ -230,8 +232,9 @@ if (!movie.languages.includes(language)) {
       starttime: start,
       format,
       screenid,
-      price,
-      availableseats,
+      seatpricing:price,
+      availableseats:seatIds
+
     });
 
     return res.status(201).json({ msg: "Showtime added", showtime });
@@ -351,22 +354,38 @@ const addscreen=async function(req,res){
        timings: z.array(z.coerce.date()),
         days:z.array(z.string().min(1).refine(val => !isNaN(Date.parse(val)), {
     message: 'Invalid date format'
-  }))
+  })),
+   layout: z.enum(['bigLayout1', 'bigLayout2', 'bigLayout3', 'bigLayout4'])
 
     })
 const parsed=screenschema.safeParse(req.body);
 if(!parsed.success){
     return res.status(400).json({message:parsed.error.issues[0].message})
 }
-const { movieid, timings, days } = parsed.data;
+const { movieid, timings, days,layout } = parsed.data;
 const adminid = req.admin.id;
+let seats;
+switch (layout) {
+  case 'bigLayout1': seats = bigLayout1(); break;
+  case 'bigLayout2': seats = bigLayout2(); break;
+  case 'bigLayout3': seats = bigLayout3(); break;
+  case 'bigLayout4': seats = bigLayout4(); break;
+  default: seats = bigLayout1(); 
+}
 
 try {
+  const movie =await moviemodel.findById(movieid)
+  if(!movie){
+    return res.status(403).json({
+      message:"movie does not exist"
+    })
+  }
   const screen = await screenmodel.create({
     movieid: movieid,
     timings: timings,
     days,
-    theatreid: adminid
+    theatreid: adminid,
+    seats
   });
   await adminmodel.findByIdAndUpdate(
       adminid,

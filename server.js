@@ -7,8 +7,11 @@ const {userrouter}=require("./Routes/userroutes")
 const { movierouter }=require("./Routes/movieroutes")
 const { theatrerouter }=require("./Routes/theatreroutes")
 const {additionalrouter}=require("./Routes/otherroutes")
+const {bookingrouter}=require("./Routes/bookingroutes")
+const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
+app.use(cookieParser());
 app.use(cors({
     origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
@@ -21,6 +24,7 @@ app.use("/api/user",userrouter);
 app.use("/api/movies",movierouter)
 app.use("/api/theatres",theatrerouter)
 app.use("/api",additionalrouter)
+app.use("/api/bookticket",bookingrouter)
 
 
 app.get("/api/message", (req, res) => {

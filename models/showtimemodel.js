@@ -7,13 +7,18 @@ const { z } = require("zod");
 
 const showtimeschema=new Schema({
     movieid:{type:ObjectId,ref:"movies",required:true},
-     theatreid: { type:ObjectId, ref: "admin", required: true },
+     theatreid: { type:ObjectId, ref: "admins", required: true },
      language:{type:String},
      starttime:{type:Date,required:true},
      format:{type:String,enum:["2D","3D","IMAX"],required:true},
-     screenid:{type:ObjectId,required:true},
-     price:{type:Number,required:true},
-     availableseats:[String]
+     screenid:{type:ObjectId,ref: "screens",required:true},
+     availableseats: [String],
+      seatpricing: {
+    Silver: Number,
+    Gold: Number,
+    Platinum: Number,
+    Diamond: Number
+  }
 
 
 },{timestamps:true})
@@ -23,7 +28,7 @@ const showtimeschema=new Schema({
 
 
 const showtimevalidation = z.object({
-  movieid: z.string().length(24, "Invalid movie ID"), // MongoDB ObjectId
+  movieid: z.string().length(24, "Invalid movie ID"),
   language: z.string().min(1, "Language is required"),
   starttime: z.coerce.date().refine(date => !isNaN(date.getTime()), {
     message: "Invalid start time format"
@@ -33,9 +38,14 @@ const showtimevalidation = z.object({
   ),
   format: z.enum(["2D", "3D", "IMAX"]),
   screenid: z.string().length(24, "Invalid screen ID"),
-  price: z.number().positive("Price must be a positive number"),
-  availableseats: z.array(z.string())
+  seatpricing: z.object({
+    Silver: z.number().positive(),
+    Gold: z.number().positive(),
+    Platinum: z.number().positive(),
+    Diamond: z.number().positive()
+  })
 });
+
 
 const showtimemodel = mongoose.model("showtimes", showtimeschema);
 module.exports = { showtimemodel,showtimevalidation };

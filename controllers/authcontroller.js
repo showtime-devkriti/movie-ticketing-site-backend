@@ -92,21 +92,25 @@ try{
   }
 
   const passwordmatch = await bcrypt.compare(password, user.password);
-  if (passwordmatch) {
+  if (!passwordmatch) {
+      return res.status(403).json({
+        msg: "Incorrect credentials",
+      });
+    }
+
     const token = jwt.sign(
-      {
-        id: user._id,
-      },
-      JWT_USER_PASS, { expiresIn: "7d" }
+      { id: user._id },
+      JWT_USER_PASS,
+      { expiresIn: "7d" }
     );
-    res.json({
-      token: token,
+
+    // ✅ Set token as HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // Set true in production
+      sameSite: "Strict", // Or "Lax" depending on your frontend
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-  } else {
-    res.status(403).json({
-      msg: "incorrect credentials",
-    });
-  }
   return res.status(200).json({
   token,
   status: "success",
