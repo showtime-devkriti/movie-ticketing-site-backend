@@ -3,6 +3,7 @@ const { screenmodel } = require("../models/screenmodel")
 const { usermodel,adminmodel } = require("../config/db")
 
 const Homepage = async function (req, res) {
+      console.log(req.check)
     if (req.check) {
         try {
             const user = await usermodel.findById(req.user.id).populate("language");
@@ -26,6 +27,7 @@ const Homepage = async function (req, res) {
                     message: "trending movies not found"
                 })
             }
+          
             const banners = bannermovies
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()) && t.languages.includes(user.language)
                 )

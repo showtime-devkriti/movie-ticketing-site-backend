@@ -10,23 +10,23 @@ const getallmovies=async function(req,res){
       const { genre, language, format } = req.query;
       const userlocation=null;
       const filter = {};
-       if (req.check && req.user.location) {
-      filter.location = req.user.location;
-    }
-        console.log(req.user.location)
+    //    if (req.check && req.user.location) {
+    //   filter.location = req.user.location;
+    // }
+    //     console.log(req.user.location)
       
-      let isSearch = false;
+      // let isSearch = false;
 
     if (search) {
-        isSearch = true;
+        // isSearch = true;
   filter.title = { $regex: search, $options: "i" };
 }
-if (isSearch && (genre || language || format)) {
-      return res.status(400).json({
-        message:
-          "You cannot use genre, language, or format filters while searching by title",
-      });
-    }
+// if (isSearch && (genre || language || format)) {
+//       return res.status(400).json({
+//         message:
+//           "You cannot use genre, language, or format filters while searching by title",
+//       });
+//     }
 
     if (genre) {
       filter.genre = { $in: genre.split(",") };

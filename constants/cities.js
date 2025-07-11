@@ -2,6 +2,7 @@ const ALLOWED_CITIES = [
   "Mumbai",
   "Delhi",
   "Bangalore",
+  "Visakhapatnam",
   "Hyderabad",
   "Chennai",
   "Kolkata",

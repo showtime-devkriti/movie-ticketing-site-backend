@@ -1,7 +1,7 @@
 const { showtimemodel } = require("../models/showtimemodel");
 const { moviemodel } = require("../models/moviemodel");
 const { screenmodel } = require("../models/screenmodel");
-
+const {usermodel,adminmodel}=require("../config/db")
 
 const getalltheatres = async function (req, res) {
   try {
