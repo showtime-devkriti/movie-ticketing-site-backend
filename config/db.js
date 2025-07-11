@@ -1,5 +1,6 @@
 
 const mongoose = require("mongoose");
+const {ALLOWED_LANGUAGES}=require("../constants/languages")
 const { ALLOWED_CITIES } = require("../constants/cities");
 const { Schema } = mongoose;;
 const { boolean } = require("zod/v4");
@@ -19,6 +20,7 @@ const userschema = new Schema({
     type: String,
     enum: ALLOWED_CITIES
   },
+  language:{type:String,enum:ALLOWED_LANGUAGES},
 
  bookinghistory: [{ type: mongoose.Schema.Types.ObjectId, ref: "bookings" }],
   friends: [{ type: ObjectId, ref: "User" }],

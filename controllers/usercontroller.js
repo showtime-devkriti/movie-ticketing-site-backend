@@ -1,7 +1,7 @@
 const { usermodel } = require("../config/db");
 const { z } = require("zod")
 const { ALLOWED_CITIES } = require("../constants/cities");
-
+const {ALLOWED_LANGUAGES}=require("../constants/languages")
 const userprofile = async function (req, res) {
     try {
         const user = await usermodel.findById(req.user.id).select("-password -_v");
@@ -91,10 +91,49 @@ const userlocation = async function (req, res) {
     }
 
 }
+const userlanguage=async function(req,res){
+    const userid=req.user.id;
+    const languageschema = z.object({
+        language: z.enum(ALLOWED_LANGUAGES)
+
+    })
+      const parsed = languageschema.safeParse(req.body)
+    if (!parsed.success) {
+        console.log("Validation error:", parsed.error.issues);
+        const firstError = parsed.error.issues[0];
+        return res.status(400).json({
+            msg: firstError.message || "Invalid input",
+        });
+        
+    }
+     const { language } = parsed.data;
+      try {
+        const user = await usermodel.findById(userid)
+        if (!user) {
+            return res.status(404).json({
+                message: "Invalid userID"
+            })
+        }
+        user.language = language;
+        await user.save();
+        return res.status(200).json({
+            message: "language updated successfully",
+           language:user.language
+        });
+
+    } catch (error) {
+        console.error("Error updating language:", error.message);
+        return res.status(500).json({
+            message: "Failed to update language",
+        });
+    }
+
+
+}
 
 
 
 
 module.exports = {
-    userprofile, userbookings, userlocation
+    userprofile, userbookings, userlocation,userlanguage
 }

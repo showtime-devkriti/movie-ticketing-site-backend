@@ -1,10 +1,11 @@
 const Router = require("express");
 const { optionalauthmiddleware } = require("../middlewares/userlogincheckmiddleware");
 const additionalrouter = Router();
-const {Homepage}=require("../controllers/othercontroller")
+const {Homepage,searchHandle}=require("../controllers/othercontroller")
 
 
-additionalrouter.get("/",optionalauthmiddleware,Homepage)
+additionalrouter.get("/home",optionalauthmiddleware,Homepage)
+additionalrouter.get("/search",searchHandle)
 
 
 

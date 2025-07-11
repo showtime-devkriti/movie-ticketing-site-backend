@@ -20,7 +20,7 @@ app.use("/api/admin",adminrouter);
 app.use("/api/user",userrouter);
 app.use("/api/movies",movierouter)
 app.use("/api/theatres",theatrerouter)
-app.use("/api/home",additionalrouter)
+app.use("/api",additionalrouter)
 
 
 app.get("/api/message", (req, res) => {
