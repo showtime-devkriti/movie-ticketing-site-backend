@@ -380,6 +380,19 @@ try {
       message:"movie does not exist"
     })
   }
+const adminScreens = await screenmodel.find({ theatreid: adminid });
+
+  const conflictScreen = adminScreens.find(screen =>
+    screen.days.some(d => days.includes(d))
+  );
+
+  if (conflictScreen) {
+    const overlappingDays = conflictScreen.days.filter(d => days.includes(d));
+    return res.status(409).json({
+      message: `Screen already booked on these days: ${overlappingDays.join(', ')}`
+    });
+  }
+
   const screen = await screenmodel.create({
     movieid: movieid,
     timings: timings,

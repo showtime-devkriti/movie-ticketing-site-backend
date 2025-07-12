@@ -38,7 +38,7 @@ const showtimevalidation = z.object({
   ),
   format: z.enum(["2D", "3D", "IMAX"]),
   screenid: z.string().length(24, "Invalid screen ID"),
-  seatpricing: z.object({
+  price: z.object({
     Silver: z.number().positive(),
     Gold: z.number().positive(),
     Platinum: z.number().positive(),
