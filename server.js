@@ -15,6 +15,7 @@ app.use(cookieParser());
 app.use(cors({
     origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
+    credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
   }));
 app.use(express.json());

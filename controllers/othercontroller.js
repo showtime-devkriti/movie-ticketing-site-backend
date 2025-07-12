@@ -50,14 +50,6 @@ const Homepage = async function (req, res) {
                 banners, recommended
             })
 
-
-
-
-
-
-
-
-
         } catch (error) {
             console.error(error.message)
             return res.status(500).json({
@@ -65,10 +57,6 @@ const Homepage = async function (req, res) {
             })
 
         }
-
-
-
-
 
     } else {
         try {
@@ -111,8 +99,6 @@ const Homepage = async function (req, res) {
 
         }
 
-
-
     }
 }
 const searchHandle=async function(req,res){
@@ -134,14 +120,11 @@ const searchHandle=async function(req,res){
       theatres
     });
 
-    
   } catch (error) {
       console.error("Search error:", error.message);
     res.status(500).json({ message: "Internal server error during search" });
     
   }
-
-
 }
 module.exports = {
     Homepage,searchHandle

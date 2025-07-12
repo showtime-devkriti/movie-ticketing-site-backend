@@ -41,10 +41,6 @@ return res.status(200).json({
   bookinghistory: user.bookinghistory
 });
 
-
-
-
-
     } catch (err) {
         console.error("error:", err);
         return res.status(500).json({
