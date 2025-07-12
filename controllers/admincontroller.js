@@ -255,87 +255,104 @@ if (!movie.languages.includes(language)) {
   
 }
 
-const addmovie=async function(req,res){
+const addmovie = async function (req, res) {
   const schema = z.object({
     imdbid: z.string().regex(/^tt\d{7,8}$/, "Invalid IMDb ID")
   });
 
-    
-  //    const movieschema = z.object({
-  //       imdbid: z.string().regex(/^tt\d{7,8}$/, "Invalid IMDb ID"),
-  //   title: z.string().min(1, "Title is required"),
-  //   rating: z.number().min(0).max(10).optional(),
-  //   genre: z.array(z.string()).optional(),
-  //   description: z.string().optional(),
-  //   format: z.array(z.enum(['2D', '3D', 'IMAX'])).min(1, "At least one format required"),
-  //   languages: z.array(z.string()).optional(),
-  //   cast: z.array(z.string()).optional(),
-  //   crew: z.array(z.string()).optional(),
-  //   trailerurl: z.string().url("Invalid trailer URL").optional()
-  // });
-   const parsed = schema.safeParse(req.body);
+  const parsed = schema.safeParse(req.body);
   if (!parsed.success) {
     const firstError = parsed.error.issues[0];
-    return res.status(400).json({
-      msg: firstError.message || "Invalid input"
-    });
+    return res.status(400).json({ msg: firstError.message || "Invalid input" });
   }
+
   const { imdbid } = req.body;
-   try {
+
+  try {
     const existingmovie = await moviemodel.findOne({ imdbid });
-if (existingmovie) {
-return res.status(409).json({
-message: "Movie already exists",
-movie: existingmovie
-});
-}
-const findRes = await axios.get(`https://api.themoviedb.org/3/find/${imdbid}`, {
+    if (existingmovie) {
+      return res.status(409).json({
+        message: "Movie already exists",
+        movie: existingmovie
+      });
+    }
+
+    // Step 1: Find TMDB ID using IMDb ID
+    const findRes = await axios.get(`https://api.themoviedb.org/3/find/${imdbid}`, {
       params: {
         api_key: TMDB_API_KEY,
         external_source: 'imdb_id'
       }
     });
-     const movieResult = findRes.data.movie_results[0];
+
+    const movieResult = findRes.data.movie_results[0];
     if (!movieResult) {
       return res.status(404).json({ msg: "Movie not found on TMDB" });
     }
-       const detailsRes = await axios.get(`https://api.themoviedb.org/3/movie/${movieResult.id}`, {
-      params: {
-        api_key: TMDB_API_KEY,
-        append_to_response: 'credits,videos'
-      }
-    });
-        const data = detailsRes.data;
-         const trailer = data.videos.results.find(
-      v => v.type === 'Trailer' && v.site === 'YouTube'
-    );
-    const posterurl = data.poster_path
-  ? `https://image.tmdb.org/t/p/w500${data.poster_path}`
-  : undefined;
 
-const backdropurl = data.backdrop_path
-  ? `https://image.tmdb.org/t/p/original${data.backdrop_path}`
-  : undefined;
+    const tmdbId = movieResult.id;
+
+    // Step 2: Fetch full details and all images in parallel
+    const [detailsRes, imagesRes] = await Promise.all([
+      axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}`, {
+        params: {
+          api_key: TMDB_API_KEY,
+          append_to_response: 'credits,videos'
+        }
+      }),
+      axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}/images`, {
+        params: { api_key: TMDB_API_KEY }
+      })
+    ]);
+
+    const data = detailsRes.data;
+    const images = imagesRes.data;
+
+    // Build image URLs
+    const posterurls = images.posters.map(p => `https://image.tmdb.org/t/p/w500${p.file_path}`);
+    const backdropurls = images.backdrops.map(b => `https://image.tmdb.org/t/p/original${b.file_path}`);
+    const logos = images.logos.map(l => `https://image.tmdb.org/t/p/w500${l.file_path}`);
+
+    const trailer = data.videos.results.find(v => v.type === 'Trailer' && v.site === 'YouTube');
     const trailerurl = trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : undefined;
-   const movieData = {
+
+    const castDetails = data.credits.cast.slice(0, 10).map(actor => ({
+      name: actor.name,
+      image: actor.profile_path ? `https://image.tmdb.org/t/p/w500${actor.profile_path}` : undefined
+    }));
+
+    const crewDetails = data.credits.crew.slice(0, 10).map(member => ({
+      name: member.name,
+      image: member.profile_path ? `https://image.tmdb.org/t/p/w500${member.profile_path}` : undefined
+    }));
+
+    // Prepare the final movie document
+    const movieData = {
       imdbid,
       title: data.title,
       rating: data.vote_average,
       genre: data.genres.map(g => g.name),
       description: data.overview,
-      format: ['2D','3D'], // Default format
+      format: ['2D', '3D'],
       languages: data.spoken_languages.map(lang => lang.english_name),
       cast: data.credits.cast.slice(0, 5).map(actor => actor.name),
       crew: data.credits.crew.slice(0, 5).map(member => member.name),
+      castDetails,
+      crewDetails,
       trailerurl,
-      posterurl,
-  backdropurl,
-  runtime: data.runtime,
-  releaseDate: data.release_date,
-  adult: data.adult,
-  popularity: data.popularity
+      posterurl: posterurls[0],
+      posterurls,
+      backdropurl: backdropurls[0],
+      backdropurls,
+      logos:logos[0],
+      runtime: data.runtime,
+      releaseDate: data.release_date,
+      adult: data.adult,
+      popularity: data.popularity
     };
+
     const newMovie = await moviemodel.create(movieData);
+
     return res.status(201).json({
       msg: "Movie added successfully",
       movie: newMovie
