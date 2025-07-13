@@ -1,6 +1,7 @@
 const {bookingmodel}=require("../models/bookingmodel")
 const {showtimemodel}=require("../models/showtimemodel")
 const {screenmodel}=require("../models/screenmodel")
+const {usermodel}=require("../config/db")
 const Razorpay = require("razorpay");
 const crypto=require("crypto")
 require('dotenv').config();
@@ -168,9 +169,13 @@ const validation=async function(req,res){
     razorpay_payment_id,
     razorpay_order_id,
   });
+  await usermodel.findByIdAndUpdate(userId, {
+  $push: { bookinghistory: booking._id }
+});
+
    showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
   await showtime.save();
-
+    console.log("Booking complete and pushed to history");
 
    res.status(200).json({
     msg: "Payment verified and booking confirmed",
