@@ -15,7 +15,7 @@ function generateSeats(rows, colsPerRow, classArray) {
   }
   return layout;
 }
-
+//rahul super
 
 function bigLayout1() {
   // 10 rows (A-J), 15 seats per row
