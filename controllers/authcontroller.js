@@ -123,6 +123,27 @@ message: "Internal server error. Please try again later."
 });
 }
 };
+
+const uservalidation=async function(req,res){
+  
+   const authheader= req.headers.Authorization;
+   
+    if(!authheader||!authheader.startsWith("Bearer ")){
+        return res.status(401).json({ message: "Missing or invalid token" });
+    }
+    const token = authheader.split(" ")[1];
+    try{
+         const decode = jwt.verify(token,JWT_USER_PASS)
+         req.user=decode;
+         return res.status(200).json({
+          message:"Valid token"
+         })
+
+    }catch(e){
+        return res.status(403).json({
+            message:"Invalid or expired token"
+        })
+}}
 module.exports = {
-  userlogin,userregister
+  userlogin,userregister,uservalidation
 };

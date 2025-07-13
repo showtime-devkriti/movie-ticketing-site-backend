@@ -1,6 +1,9 @@
 const {bookingmodel}=require("../models/bookingmodel")
 const {showtimemodel}=require("../models/showtimemodel")
 const {screenmodel}=require("../models/screenmodel")
+const {razorpay}=require("../constants/razorpay")
+const crypto=require("crypto")
+require('dotenv').config();
 
 const bookingticket=async function(req,res){
     const showtimeid=req.params.showtimeid;
@@ -48,7 +51,8 @@ for (const s of seats) {
     movie: showtime.movieid,
     seats,
     totalprice: total,
-    tickettype
+    tickettype,
+    paymentstatus: "pending"
   });
    showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
   await showtime.save();
@@ -95,6 +99,51 @@ const screen = await screenmodel.findById(showtime.screenid);
         
     }
 }
+const createorder=async function(req,res){
+
+  
+
+
+
+  try {
+    const options =req.body
+    
+    const order = await razorpay.orders.create(options);
+    if(!order){
+      return res.status(500).json({
+        message:"order is empty"
+      })
+    }
+    return res.status(200).json(order);
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Failed to create Razorpay order" });
+  }
+
+}
+const validation=async function(req,res){
+  const {razorpay_order_id,razorpay_payment_id,razorpay_signature}=req.body
+  const sha=crypto.createHmac("sha256",process.env.RAZORPAY_KEY_SECRET)
+  sha.update(`${razorpay_order_id}|${razorpay_payment_id}`)
+  const digest =sha.digest("hex");
+  console.log(digest)
+  console.log(razorpay_signature)
+  if(digest!==razorpay_signature){
+    return res.status(400).json({
+      msg:"Transaction is not legit"
+
+    })
+  }
+  res.json({
+    msg:"success",
+    orderId:razorpay_order_id,
+    paymentId:razorpay_payment_id,
+  })
+}
+
+
+
+
 module.exports={
-    getSeatLayoutForShowtime,bookingticket
+    getSeatLayoutForShowtime,bookingticket,createorder,validation
 }

@@ -10,7 +10,8 @@ const bookingschema = new Schema({
   seats: [String],
   totalprice: Number,
   tickettype: String,
-  bookingdate: { type: Date, default: Date.now }
+  bookingdate: { type: Date, default: Date.now },
+  paymentstatus:{type:String,enum:["pending","paid"],default:"pending"}
 });
 
 const bookingmodel = mongoose.model("bookings", bookingschema);
