@@ -1,11 +1,11 @@
 const {bookingmodel}=require("../models/bookingmodel")
 const {showtimemodel}=require("../models/showtimemodel")
 const {screenmodel}=require("../models/screenmodel")
-const {razorpay}=require("../constants/razorpay")
+const Razorpay = require("razorpay");
 const crypto=require("crypto")
 require('dotenv').config();
 
-const bookingticket=async function(req,res){
+const initiatebooking=async function(req,res){
     const showtimeid=req.params.showtimeid;
     const { seats, tickettype } = req.body;
      if (!Array.isArray(seats) || seats.length === 0) {
@@ -24,10 +24,7 @@ const screen = await screenmodel.findById(showtime.screenid);
     seatMap[seat.seatid] = seat.seatClass;
   }
 
-  const alreadyBooked = [];
-  for (const s of seats) {
-    if (!showtime.availableseats.includes(s)) alreadyBooked.push(s);
-  }
+ const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
   if (alreadyBooked.length > 0) {
     return res.status(409).json({ msg: "Some seats already booked", alreadyBooked });
   }
@@ -43,25 +40,38 @@ for (const s of seats) {
   }
   total += price;
 }
-
-  const booking = await bookingmodel.create({
-    user: userId,
-    showtime: showtimeid,
-    theatre: showtime.theatreid,
-    movie: showtime.movieid,
+ const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+  const options = {
+    amount: total * 100, // in paise
+    currency: "INR",
+    receipt: `receipt_order_${Date.now()}`
+  };
+ try {
+   
+    
+    const order = await razorpay.orders.create(options);
+    if(!order){
+      return res.status(500).json({
+        message:"order is empty"
+      })
+    }
+   return res.status(200).json({
+    msg: "Order created successfully",
+    order,
+    showtimeid,
     seats,
-    totalprice: total,
     tickettype,
-    paymentstatus: "pending"
+    total
   });
-   showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
-  await showtime.save();
-
-  return res.status(201).json({
-    msg: "Booking successful",
-    booking
-  });
-
+  } catch (err) {
+    console.error(err)
+    return res.status(500).json({ message: "Failed to create Razorpay order" });
+  }
+  
+ 
 
 }
 const getSeatLayoutForShowtime=async function(req,res){
@@ -99,51 +109,87 @@ const screen = await screenmodel.findById(showtime.screenid);
         
     }
 }
-const createorder=async function(req,res){
+// const createorder=async function(req,res){
 
   
 
 
 
-  try {
-    const options =req.body
+//   try {
+//     const options =req.body
     
-    const order = await razorpay.orders.create(options);
-    if(!order){
-      return res.status(500).json({
-        message:"order is empty"
-      })
-    }
-    return res.status(200).json(order);
-  } catch (err) {
-    console.error(err)
-    return res.status(500).json({ message: "Failed to create Razorpay order" });
-  }
+//     const order = await razorpay.orders.create(options);
+//     if(!order){
+//       return res.status(500).json({
+//         message:"order is empty"
+//       })
+//     }
+//     return res.status(200).json(order);
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({ message: "Failed to create Razorpay order" });
+//   }
 
-}
+// }
 const validation=async function(req,res){
-  const {razorpay_order_id,razorpay_payment_id,razorpay_signature}=req.body
+  const {razorpay_order_id,razorpay_payment_id,razorpay_signature, showtimeid,
+    seats,
+    tickettype,
+    total}=req.body
   const sha=crypto.createHmac("sha256",process.env.RAZORPAY_KEY_SECRET)
   sha.update(`${razorpay_order_id}|${razorpay_payment_id}`)
   const digest =sha.digest("hex");
-  console.log(digest)
-  console.log(razorpay_signature)
+  // console.log(digest)
+  // console.log(razorpay_signature)
   if(digest!==razorpay_signature){
     return res.status(400).json({
       msg:"Transaction is not legit"
 
     })
   }
-  res.json({
-    msg:"success",
-    orderId:razorpay_order_id,
-    paymentId:razorpay_payment_id,
-  })
+  try {
+     const userId = req.user.id;
+  const showtime = await showtimemodel.findById(showtimeid);
+  if (!showtime) return res.status(404).json({ msg: "Showtime not found" });
+
+  const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
+  if (alreadyBooked.length > 0) {
+    return res.status(409).json({ msg: "Some seats just got booked", alreadyBooked });
+  }
+  const booking = await bookingmodel.create({
+    user: userId,
+    showtime: showtimeid,
+    theatre: showtime.theatreid,
+    movie: showtime.movieid,
+    seats,
+    totalprice: total,
+    tickettype,
+    paymentstatus: "success",
+    razorpay_payment_id,
+    razorpay_order_id,
+  });
+   showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
+  await showtime.save();
+
+
+   res.status(200).json({
+    msg: "Payment verified and booking confirmed",
+    booking
+  });
+    
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({
+      message:"failed to create a ticket"
+    })
+    
+  }
+  
 }
 
 
 
 
 module.exports={
-    getSeatLayoutForShowtime,bookingticket,createorder,validation
+    getSeatLayoutForShowtime,initiatebooking,validation
 }

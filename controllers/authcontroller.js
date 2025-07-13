@@ -126,7 +126,7 @@ message: "Internal server error. Please try again later."
 
 const uservalidation=async function(req,res){
   
-   const authheader= req.headers.Authorization;
+   const authheader= req.headers.authorization;
    
     if(!authheader||!authheader.startsWith("Bearer ")){
         return res.status(401).json({ message: "Missing or invalid token" });

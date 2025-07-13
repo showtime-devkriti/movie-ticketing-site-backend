@@ -1,10 +1,10 @@
 const Router = require("express");
 const { usermiddleware } = require("../middlewares/authmiddleware");
-const { createorder, validation } = require("../controllers/bookingcontroller");
+const {  validation } = require("../controllers/bookingcontroller");
 const paymentrouter = Router();
 
-paymentrouter.post("/create-order",createorder)
-paymentrouter.post("/validate",validation)
+
+paymentrouter.post("/validate",usermiddleware,validation)
 
 
 
