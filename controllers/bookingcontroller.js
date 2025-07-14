@@ -74,7 +74,8 @@ for (const s of seats) {
   
  
 
-}
+} 
+
 const getSeatLayoutForShowtime=async function(req,res){
     const showtimeid = req.params.showtimeid;
     try {
@@ -110,28 +111,7 @@ const screen = await screenmodel.findById(showtime.screenid);
         
     }
 }
-// const createorder=async function(req,res){
 
-  
-
-
-
-//   try {
-//     const options =req.body
-    
-//     const order = await razorpay.orders.create(options);
-//     if(!order){
-//       return res.status(500).json({
-//         message:"order is empty"
-//       })
-//     }
-//     return res.status(200).json(order);
-//   } catch (err) {
-//     console.error(err)
-//     return res.status(500).json({ message: "Failed to create Razorpay order" });
-//   }
-
-// }
 const validation=async function(req,res){
   const {razorpay_order_id,razorpay_payment_id,razorpay_signature, showtimeid,
     seats,
@@ -195,6 +175,52 @@ const validation=async function(req,res){
 
 
 
+
+
+
 module.exports={
     getSeatLayoutForShowtime,initiatebooking,validation
 }
+// const createorder=async function(req,res){
+
+  
+
+
+
+//   try {
+//     const options =req.body
+    
+//     const order = await razorpay.orders.create(options);
+//     if(!order){
+//       return res.status(500).json({
+//         message:"order is empty"
+//       })
+//     }
+//     return res.status(200).json(order);
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({ message: "Failed to create Razorpay order" });
+//   }
+
+// }// const createorder=async function(req,res){
+
+  
+
+
+
+//   try {
+//     const options =req.body
+    
+//     const order = await razorpay.orders.create(options);
+//     if(!order){
+//       return res.status(500).json({
+//         message:"order is empty"
+//       })
+//     }
+//     return res.status(200).json(order);
+//   } catch (err) {
+//     console.error(err)
+//     return res.status(500).json({ message: "Failed to create Razorpay order" });
+//   }
+
+// }

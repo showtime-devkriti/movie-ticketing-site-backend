@@ -29,7 +29,7 @@ const userbookings = async function (req, res) {
     populate: [
       { path: 'movie', select: 'title posterurl' },
       { path: 'theatre', select: 'theatretitle location' },
-      { path: 'showtime' }
+      { path: 'showtime',select :'starttime seats'}
     ]
   });
 
@@ -53,6 +53,7 @@ return res.status(200).json({
 
     }
 }
+
 const userlocation = async function (req, res) {
     const userid = req.user.id;
     const locationschema = z.object({
@@ -91,6 +92,7 @@ const userlocation = async function (req, res) {
     }
 
 }
+
 const userlanguage=async function(req,res){
     const userid=req.user.id;
     const languageschema = z.object({
@@ -130,6 +132,7 @@ const userlanguage=async function(req,res){
 
 
 }
+
 
 
 

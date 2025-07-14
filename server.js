@@ -10,11 +10,12 @@ const {additionalrouter}=require("./Routes/otherroutes")
 const {bookingrouter}=require("./Routes/bookingroutes")
 const {paymentrouter}=require("./Routes/paymentroutes")
 const cookieParser = require("cookie-parser");
+require("dotenv").config();
 const cors = require("cors");
 
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
+    origin: "http://localhost:5174", // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
     credentials:true

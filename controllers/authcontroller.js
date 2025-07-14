@@ -6,7 +6,8 @@ const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const authmiddleware = require("../middlewares/authmiddleware");
 const {ALLOWED_CITIES}=require("../constants/cities");
-
+const {transporter} = require("../constants/mali");
+const { sendOTP } = require("../constants/twilio");
 const userregister= async function (req, res) {
   const requiredbody = z.object({
     email: z.string().email(),
@@ -144,6 +145,112 @@ const uservalidation=async function(req,res){
             message:"Invalid or expired token"
         })
 }}
+
+const forgotpassword=async function(req,res){
+  const { method, email, phonenumber } = req.body;
+  try {
+    let user;
+
+    if (method === "email") {
+      if (!email) return res.status(400).json({ message: "Email is required" });
+      user = await usermodel.findOne({ email });
+    } else if (method === "sms") {
+      if (!phonenumber) return res.status(400).json({ message: "Phone number is required" });
+      user = await usermodel.findOne({ phonenumber }); 
+    } else {
+      return res.status(400).json({ message: "Invalid method selected" });
+    }
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+   const token = jwt.sign({ id: user._id }, process.env.JWT_RESET_SECRET, { expiresIn: "15m" });
+ if (method === "email") {
+     const resetLink = `http://localhost:5173/reset-password/${token}`;
+
+
+await transporter.sendMail({
+    from: process.env.MAIL_USER,
+    to: user.email,
+    subject: "Password Reset",
+    html: `<p>Click <a href="${resetLink}">here</a> to reset your password. Link valid for 15 minutes.</p>`
+  });
+
+  return res.status(200).json({ message: "Reset link sent to email" });
+}
+  if (method === "sms") {
+    console.log("TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID);
+console.log("TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN);
+console.log("TWILIO_PHONE_NUMBER:", process.env.TWILIO_PHONE_NUMBER);
+
+      const resetMessage = `Reset your password using this token:\n${token}\nToken valid for 15 mins.`;
+      await sendOTP(phonenumber, resetMessage);
+
+      return res.status(200).json({ message: "Reset token sent via SMS" });
+    }
+  } catch (err) {
+    console.error("Forgot password error:", err.message);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const verifyresettoken = async function(req,res){
+  const {token}=req.body;
+  try {
+    const decoded=jwt.verify(token,process.env.JWT_RESET_SECRET);
+    
+    res.status(200).json({ 
+      message: "token verified successfully Now you canenter the new password",
+      stateus:"success"
+
+     });
+   
+    
+  } catch (error) {
+     console.error("Reset error:", error.message);
+     return res.status(400).json({ 
+      message: "Invalid or expired token" ,
+      stateus:"fail"
+    });
+    
+  }
+}
+
+
+const resetpassword = async function (req, res) {
+  const resetPasswordSchema = z.object({
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters long")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number")})
+  const parsed = resetPasswordSchema.safeParse(req.body);
+
+if (!parsed.success) {
+  const firstError = parsed.error.issues[0].message;
+  console.log(firstError)
+  return res.status(400).json({ message: firstError });
+}
+
+
+  const { token, newPassword } = req.body;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_RESET_SECRET);
+    const user = await usermodel.findById(decoded.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+};
+
 module.exports = {
-  userlogin,userregister,uservalidation
+  userlogin,userregister,uservalidation,forgotpassword,verifyresettoken,resetpassword
 };
