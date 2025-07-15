@@ -11,4 +11,4 @@ const sendOTP = async (to, body) => {
   });
 };
 
-module.exports = { sendOTP };
+module.exports = { sendOTP }; 
