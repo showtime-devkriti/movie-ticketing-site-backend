@@ -32,7 +32,7 @@ const Homepage = async function (req, res) {
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()) && t.languages.includes(user.language)
                 )
                 .slice(0, 7)
-                .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title }));;
+                .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title,rating:t.rating,language:t.languages,genre:t.genre }));;
 
             const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(13);
             if (!recommendedmovies) {
@@ -41,10 +41,9 @@ const Homepage = async function (req, res) {
                 })
             }
             const recommended = recommendedmovies
-                .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()) && t.languages.includes(user.language)
-                )
+                .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()) && t.languages.includes(user.language))
                 .slice(0, 7)
-                .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title }));;
+                .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title,rating:t.rating,language:t.languages,genre:t.genre }));;
             return res.status(200).json({
                 message: "latest movies found",
                 banners, recommended
@@ -86,7 +85,7 @@ const Homepage = async function (req, res) {
             const banners = bannermovies
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()))
                 .slice(0, 7)
-                .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title }));;
+                .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre}));;
 
             const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(13);
             if (!recommendedmovies) {
@@ -97,7 +96,7 @@ const Homepage = async function (req, res) {
             const recommended = recommendedmovies
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()))
                 .slice(0, 7)
-                .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title }));;
+                .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre}));;
             return res.status(200).json({
                 message: "latest movies found",
                 banners, recommended
