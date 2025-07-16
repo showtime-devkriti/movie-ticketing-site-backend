@@ -9,7 +9,7 @@ const bookingschema = new Schema({
   movie: { type: ObjectId, ref: 'movies', required: true },
   seats: [String],
   totalprice: Number,
-  tickettype: String,
+  offerCoupon: String,
   bookingdate: { type: Date, default: Date.now },
   paymentstatus:{type:String,enum:["pending","success"],default:"pending"}
 });

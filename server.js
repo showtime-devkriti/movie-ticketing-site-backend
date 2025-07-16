@@ -1,5 +1,6 @@
 const express = require("express");
 const app=express();
+const {startShowtimeCleanupJob}=require("./constants/showtimecleanup")
 const mongoose = require("mongoose"); 
 const {authrouter}=require("./Routes/authroutes")
 const {adminrouter}=require("./Routes/adminroutes")
@@ -18,7 +19,7 @@ app.use(cors({
     origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
-    credentials:false
+    credentials:true
   }));
 app.use(express.json());
 app.use(express.urlencoded({extended:false}))
@@ -30,12 +31,13 @@ app.use("/api/theatres",theatrerouter)
 app.use("/api/bookticket",bookingrouter)
 app.use("/api/payment",paymentrouter)
 app.use("/api",additionalrouter)
+startShowtimeCleanupJob();
 
 
 
-app.get("/api/message", (req, res) => {
-    res.json({ message: "Hello from Express!" });
-  });
+
+
+
 
  
 

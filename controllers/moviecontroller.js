@@ -1,5 +1,6 @@
 const { adminmodel,usermodel } = require("../config/db");
 const {moviemodel}=require("../models/moviemodel")
+const {screenmodel}=require("../models/screenmodel")
 
 
 
@@ -58,8 +59,29 @@ const getMovieById=async function(req,res){
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
     }
-    return res.status(200).json({ movie });
+    const genre=movie.genre;
+    const languages=movie.languages;
+     const screens = await screenmodel.find({}, 'movieid');
+                const movieIdsOnScreens = screens.map(screen => screen.movieid.toString());
+     const  recommendedmovies   = await moviemodel.find({
+      _id: { $ne: movieid }, // exclude the current movie itself
+      $or: [
+        { genre: { $in: genre } },        // match any genre
+        { languages: { $in: languages } } // match any language
+      ]
+    }).sort({ rating: -1 }) // sort by rating descending
+      .limit(10);
+
+      const moviesYouAlsoLike=recommendedmovies
+                .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()))
+                .slice(0, 7)
+                .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre}));;
+
+    return res.status(200).json({
+      movie,moviesYouAlsoLike
+    });
   } catch (error) {
+    console.error(error.message)
     return res.status(500).json({ message: "Failed to fetch movie" });
   }
    

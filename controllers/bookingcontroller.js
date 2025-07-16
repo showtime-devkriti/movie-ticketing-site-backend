@@ -2,13 +2,19 @@ const {bookingmodel}=require("../models/bookingmodel")
 const {showtimemodel}=require("../models/showtimemodel")
 const {screenmodel}=require("../models/screenmodel")
 const {usermodel}=require("../config/db")
+const { moviemodel } = require("../models/moviemodel");
+const { adminmodel } = require("../config/db");
+const { sendTicket } = require("../constants/mali");
 const Razorpay = require("razorpay");
+const generateTicket = require("../constants/generateticket");
+const path = require("path");
+const fs = require("fs");
 const crypto=require("crypto")
 require('dotenv').config();
 
 const initiatebooking=async function(req,res){
     const showtimeid=req.params.showtimeid;
-    const { seats, tickettype } = req.body;
+    const { seats, offercoupon } = req.body;
      if (!Array.isArray(seats) || seats.length === 0) {
     return res.status(400).json({ msg: "No seats selected" });
   }
@@ -64,7 +70,7 @@ for (const s of seats) {
     order,
     showtimeid,
     seats,
-    tickettype,
+    offercoupon,
     total
   });
   } catch (err) {
@@ -111,11 +117,11 @@ const screen = await screenmodel.findById(showtime.screenid);
         
     }
 }
-
+ 
 const validation=async function(req,res){
   const {razorpay_order_id,razorpay_payment_id,razorpay_signature, showtimeid,
     seats,
-    tickettype,
+   
     total}=req.body
   const sha=crypto.createHmac("sha256",process.env.RAZORPAY_KEY_SECRET)
   sha.update(`${razorpay_order_id}|${razorpay_payment_id}`)
@@ -144,7 +150,7 @@ const validation=async function(req,res){
     movie: showtime.movieid,
     seats,
     totalprice: total,
-    tickettype,
+ 
     paymentstatus: "success",
     razorpay_payment_id,
     razorpay_order_id,
@@ -156,10 +162,38 @@ const validation=async function(req,res){
    showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
   await showtime.save();
     console.log("Booking complete and pushed to history");
+    const movie = await moviemodel.findById(showtime.movieid);
+const theatre = await adminmodel.findById(showtime.theatreid);
+    const ticketsDir = path.join(__dirname, "../tickets");
+    if (!fs.existsSync(ticketsDir)) {
+      fs.mkdirSync(ticketsDir);
+    }
 
+const ticketPath = path.join(ticketsDir, `ticket-${booking._id}.pdf`);
+const bookingData={
+  title: movie.title,
+  language:showtime.language,
+  format: showtime.format,
+  theatretitle: theatre.theatretitle,
+  location:theatre.location,
+  startTime: showtime.starttime, // or "Screen 1" etc.
+  seats,
+  quantity: seats.length,
+  ticketPrice: total - 75.52, // if you’re subtracting fee
+  convenienceFee: 75.52,
+  totalAmount: total
+}
+generateTicket(bookingData, ticketPath);
+const user = await usermodel.findById(userId);
+
+await sendTicket({
+  to: user.email,
+  bookingId: booking._id
+});
    res.status(200).json({
     msg: "Payment verified and booking confirmed",
-    booking
+    booking,
+    ticketFile: `ticket-${booking._id}.pdf`
   });
     
   } catch (error) {
