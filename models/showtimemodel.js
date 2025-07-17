@@ -37,7 +37,7 @@ const showtimevalidation = z.object({
     { message: "Start time cannot be in the past" }
   ),
   format: z.enum(["2D", "3D", "IMAX"]),
-  screenid: z.string().length(24, "Invalid screen ID"),
+
   price: z.object({
     Silver: z.number().positive(),
     Gold: z.number().positive(),

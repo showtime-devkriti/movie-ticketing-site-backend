@@ -173,7 +173,8 @@ username: admin.adminusername
 
 const addshowtime =async function(req,res){
     const adminid=req.admin.id;
-    const {movieid,language,starttime,format,screenid,price}=req.body;
+    const screenid=req.params.screenid
+    const {movieid,language,starttime,format,price}=req.body;
     
   try {
 
@@ -481,6 +482,42 @@ const deleteshowtime = async (req, res) => {
   }
 };
 
+const getscreen=async function(req,res){
+    const adminid=req.admin.id;
+    try {
+       const screens = await screenmodel.find({ theatreid: adminid })
+       .select("-seats -__v")
+        .populate("movieid", "title poster rating") 
+      .sort({ createdAt: -1 });
+       if (!screens || screens.length === 0) {
+      return res.status(404).json({ message: "No screens found for this admin" });
+    }
+
+        const groupedScreens = {};
+         for (const screen of screens) {
+      const key = screen.screenName // group key like "screen1", "screen2"
+      if (!groupedScreens[key]) {
+        groupedScreens[key] = [];
+      }
+      groupedScreens[key].push(screen);
+    }
+ return res.status(200).json({
+      message: "Screens fetched successfully",
+      screens:groupedScreens
+    });
+      
+    } catch (error) {
+      console.error("Error in getscreen:", error);
+    return res.status(500).json({ message: "Internal server error" });
+      
+    }
+
+}
+
+
+
+
+
 
 
 
@@ -494,7 +531,7 @@ const deleteshowtime = async (req, res) => {
 
 module.exports = {
   adminlogin,adminregister,addshowtime,addmovie,
-  addscreen,deleteshowtime
+  addscreen,deleteshowtime,getscreen
 };
 // const addscreen=async function(req,res){
 //    const screenschema=z.object({
