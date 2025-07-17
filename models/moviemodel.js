@@ -9,8 +9,7 @@ const movieschema = new Schema({
   genre: [String],
   languages: [String],
   description: String,
-  cast: [String],
-  crew: [String],
+ 
   castDetails: [
     {
       name: String,

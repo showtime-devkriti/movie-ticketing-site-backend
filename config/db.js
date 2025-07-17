@@ -41,9 +41,11 @@ const userschema = new Schema({
 
 
 
+
 const adminschema = new Schema({
   theatretitle: String,
   password:String,
+  image:String,
   location: {
     type: String,
     enum: ALLOWED_CITIES,
@@ -55,14 +57,18 @@ const adminschema = new Schema({
   phone2: { type: String, unique: true },
   adminusername: { type: String, unique: true },
   paymentregistration: { type: Boolean, default: false },
-  screens: [{ type: ObjectId, ref: "Screen" }],
+   screenInfo: [ {
+      screenName: { type: String, required: true },
+      screenType: { type: String, enum: ["bigLayout1", "bigLayout2", "bigLayout3", "bigLayout4"], required: true }
+    }],
+  screens: [{ type:ObjectId, ref: "Screen" }]
 
 
 
 
 
 
-})
+}, { timestamps: true })
 
 
 const usermodel = mongoose.model("users", userschema);

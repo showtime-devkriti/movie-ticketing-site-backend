@@ -16,6 +16,7 @@ const seatSchema = new Schema({
 
 
 const screenschema = new Schema({
+   screenName: { type: String, required: true },
   movieid: { type: ObjectId, ref: "movies", required: true },
   theatreid: { type: ObjectId, ref: "admins", required: true },
   timings: [{ type: Date, required: true }],

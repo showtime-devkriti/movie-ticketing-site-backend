@@ -18,6 +18,7 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const adminregister=async function(req,res){
   const requiredbody = z.object({
       theatretitle: z.string().max(55),
+      image:z.string().url(),
       phone1: z.string().regex(/^[6-9]\d{9}$/),
       phone2: z.string().regex(/^[6-9]\d{9}$/),
       email1: z.string().email(),
@@ -28,28 +29,30 @@ const adminregister=async function(req,res){
         .min(8) 
         .regex(/[a-zA-Z]/)
         .regex(/[0-9]/), 
-      location:z.enum(ALLOWED_CITIES)
+      location:z.enum(ALLOWED_CITIES),
+      screenInfo: z.array(z.object({
+      name: z.string().min(1),
+      screenType: z.enum(["bigLayout1","bigLayout2","bigLayout3","bigLayout4"])
+    })).min(1).max(10)
     });
      const parsed = requiredbody.safeParse(req.body); 
      if (!parsed.success) {
     const firstError = parsed.error.issues[0];
-    res.status(400).json({
-      msg: firstError.message || "Invalid input",
-    });
-    return;
+    return res.status(400).json({ msg: firstError.message || "Invalid input" });
   }
-
 
  
     const {
       theatretitle,
+      image,
       phone1,
       phone2,
       email1,
       email2,
       adminusername,
       password,
-      location
+      location,
+      screenInfo
     } = req.body;
 
      const conflict = await adminmodel.findOne({
@@ -73,6 +76,7 @@ const adminregister=async function(req,res){
      const hashedPassword = await bcrypt.hash(password, 10);
       const admin = await adminmodel.create({
       theatretitle,
+      image,
       email1,
       email2,
       phone1,
@@ -80,6 +84,7 @@ const adminregister=async function(req,res){
       adminusername,
       location,
       paymentregistration: false,
+        screenInfo,
       password: hashedPassword
     });
     return res.status(201).json({
@@ -89,7 +94,9 @@ const adminregister=async function(req,res){
 
     
   } catch (error) {
+    console.error(error.message)
     return res.status(500).json({
+      
       message:"Error Registration failed!! Try again"
     })
 
@@ -364,73 +371,90 @@ const addmovie = async function (req, res) {
   }
 };
 
-const addscreen=async function(req,res){
-   const screenschema=z.object({
-        movieid:z.string(),
-    
-       timings: z.array(z.coerce.date()),
-        days:z.array(z.string().min(1).refine(val => !isNaN(Date.parse(val)), {
-    message: 'Invalid date format'
-  })),
-   layout: z.enum(['bigLayout1', 'bigLayout2', 'bigLayout3', 'bigLayout4'])
+const addscreen = async function (req, res) {
+  const screenschema = z.object({
+    movieid: z.string(),
+    screenName: z.string(),
+    timings: z.array(z.coerce.date()),
+    days: z.array(z.string().refine(val => !isNaN(Date.parse(val)), {
+      message: 'Invalid date format'
+    })),
+    layout: z.enum(['bigLayout1', 'bigLayout2', 'bigLayout3', 'bigLayout4'])
 
-    })
-const parsed=screenschema.safeParse(req.body);
-if(!parsed.success){
-    return res.status(400).json({message:parsed.error.issues[0].message})
-}
-const { movieid, timings, days,layout } = parsed.data;
-const adminid = req.admin.id;
-let seats;
-switch (layout) {
-  case 'bigLayout1': seats = bigLayout1(); break;
-  case 'bigLayout2': seats = bigLayout2(); break;
-  case 'bigLayout3': seats = bigLayout3(); break;
-  case 'bigLayout4': seats = bigLayout4(); break;
-  default: seats = bigLayout1(); 
-}
-
-try {
-  const movie =await moviemodel.findById(movieid)
-  if(!movie){
-    return res.status(403).json({
-      message:"movie does not exist"
-    })
-  }
-const adminScreens = await screenmodel.find({ theatreid: adminid });
-
-  const conflictScreen = adminScreens.find(screen =>
-    screen.days.some(d => days.includes(d))
-  );
-
-  if (conflictScreen) {
-    const overlappingDays = conflictScreen.days.filter(d => days.includes(d));
-    return res.status(409).json({
-      message: `Screen already booked on these days: ${overlappingDays.join(', ')}`
-    });
-  }
-
-  const screen = await screenmodel.create({
-    movieid: movieid,
-    timings: timings,
-    days,
-    theatreid: adminid,
-    seats
   });
-  await adminmodel.findByIdAndUpdate(
-      adminid,
-      { $push: { screens: screen._id } },
-      { new: true }
+
+  const parsed = screenschema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ message: parsed.error.issues[0].message });
+  }
+
+  const { movieid, screenName, timings, days,layout } = parsed.data;
+  const adminid = req.admin.id;
+
+  try {
+    const movie = await moviemodel.findById(movieid);
+    if (!movie) {
+      return res.status(404).json({ message: "Movie does not exist" });
+    }
+
+    const admin = await adminmodel.findById(adminid);
+  const screenInfo = admin.screenInfo.find(
+  s => s.screenName && s.screenName.trim().toLowerCase() === screenName.trim().toLowerCase()
+);
+
+
+    if (!screenInfo) {
+      return res.status(400).json({ message: "Invalid screen name" });
+    }
+
+    // Check if same screen already booked on any of the given days
+    const existing = await screenmodel.find({ theatreid: adminid, screenName });
+
+    const conflictingDays = existing.flatMap(s =>
+      s.days.filter(day => days.includes(day))
     );
-  return res.status(201).json({
-    message: "Screen added successfully",
-    screen
-  });
-} catch (e) {
-  return res.status(500).json({ message: "Failed to add screen" });
-}
 
-}
+    if (conflictingDays.length > 0) {
+      return res.status(409).json({
+        message: `Screen "${screenName}" already booked on: ${[...new Set(conflictingDays)].join(", ")}`
+      });
+    }
+
+    // Check duplicate timings
+    const uniqueTimings = [...new Set(timings.map(t => new Date(t).getTime()))];
+    if (uniqueTimings.length !== timings.length) {
+      return res.status(400).json({ message: "Duplicate timings are not allowed" });
+    }
+
+    // Get layout seats
+let seats
+    switch (layout) {
+      case 'bigLayout1': seats = bigLayout1(); break;
+      case 'bigLayout2': seats = bigLayout2(); break;
+      case 'bigLayout3': seats = bigLayout3(); break;
+      case 'bigLayout4': seats = bigLayout4(); break;
+      default: seats = bigLayout1();
+    }
+
+    const screen = await screenmodel.create({
+      screenName,
+      movieid,
+      theatreid: adminid,
+      timings,
+      days,
+      seats
+    });
+
+    return res.status(201).json({
+      message: "Screen scheduled successfully",
+      screen
+    });
+
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
 
 const deleteshowtime = async (req, res) => {
   const showtimeid = req.params.id;
@@ -472,3 +496,70 @@ module.exports = {
   adminlogin,adminregister,addshowtime,addmovie,
   addscreen,deleteshowtime
 };
+// const addscreen=async function(req,res){
+//    const screenschema=z.object({
+//         movieid:z.string(),
+    
+//        timings: z.array(z.coerce.date()),
+//         days:z.array(z.string().min(1).refine(val => !isNaN(Date.parse(val)), {
+//     message: 'Invalid date format'
+//   })),
+//    layout: z.enum(['bigLayout1', 'bigLayout2', 'bigLayout3', 'bigLayout4'])
+
+//     })
+// const parsed=screenschema.safeParse(req.body);
+// if(!parsed.success){
+//     return res.status(400).json({message:parsed.error.issues[0].message})
+// }
+// const { movieid, timings, days,layout } = parsed.data;
+// const adminid = req.admin.id;
+// let seats;
+// switch (layout) {
+//   case 'bigLayout1': seats = bigLayout1(); break;
+//   case 'bigLayout2': seats = bigLayout2(); break;
+//   case 'bigLayout3': seats = bigLayout3(); break;
+//   case 'bigLayout4': seats = bigLayout4(); break;
+//   default: seats = bigLayout1(); 
+// }
+
+// try {
+//   const movie =await moviemodel.findById(movieid)
+//   if(!movie){
+//     return res.status(403).json({
+//       message:"movie does not exist"
+//     })
+//   }
+// const adminScreens = await screenmodel.find({ theatreid: adminid });
+
+//   const conflictScreen = adminScreens.find(screen =>
+//     screen.days.some(d => days.includes(d))
+//   );
+
+//   if (conflictScreen) {
+//     const overlappingDays = conflictScreen.days.filter(d => days.includes(d));
+//     return res.status(409).json({
+//       message: `Screen already booked on these days: ${overlappingDays.join(', ')}`
+//     });
+//   }
+
+//   const screen = await screenmodel.create({
+//     movieid: movieid,
+//     timings: timings,
+//     days,
+//     theatreid: adminid,
+//     seats
+//   });
+//   await adminmodel.findByIdAndUpdate(
+//       adminid,
+//       { $push: { screens: screen._id } },
+//       { new: true }
+//     );
+//   return res.status(201).json({
+//     message: "Screen added successfully",
+//     screen
+//   });
+// } catch (e) {
+//   return res.status(500).json({ message: "Failed to add screen" });
+// }
+
+// }

@@ -25,7 +25,7 @@ const Homepage = async function (req, res) {
             const bannermovies = await moviemodel
                 .find()
                 .sort({ createdAt: -1 })
-                .limit(21);
+                .limit(41);
             if (!bannermovies) {
                 return res.status(404).json({
                     message: "trending movies not found"
@@ -44,7 +44,7 @@ const Homepage = async function (req, res) {
                 .slice(0, 7)
                 .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title,rating:t.rating,language:t.languages,genre:t.genre,logos:t.logos,description:t.description }));;
 
-            const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(13);
+            const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(41);
             if (!recommendedmovies) {
                 return res.status(404).json({
                     message: "recommended movies not found"
@@ -54,10 +54,57 @@ const Homepage = async function (req, res) {
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()) && t.languages.includes(user.language))
                 .slice(0, 8)
                 .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title,rating:t.rating,language:t.languages,genre:t.genre }));;
+            
+const allowedLanguages = ["Hindi", "English",user.language];
+
+const comedy = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const crime = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Crime") &&
+    !t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const actionAndAdventure = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    (t.genre.includes("Action") || t.genre.includes("Adventure")) &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const romance = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Romance") &&
+    !t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+
             return res.status(200).json({
                 message: "latest movies found",
-                banners, recommended
+                banners, recommended,comedy,romance,actionAndAdventure,crime
             })
+
 
 
 
@@ -88,7 +135,7 @@ const Homepage = async function (req, res) {
             const bannermovies = await moviemodel
                 .find()
                 .sort({ createdAt: -1 })
-                .limit(21);
+                .limit(41);
             if (!bannermovies) {
                 return res.status(404).json({
                     message: "trending movies not found"
@@ -99,7 +146,7 @@ const Homepage = async function (req, res) {
                 .slice(0, 7)
                 .map(t => ({ id: t._id, backdropurl: t.backdropurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre,logos:t.logos,description:t.description}));;
 
-            const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(13);
+            const recommendedmovies = await moviemodel.find().sort({ rating: -1 }).limit(41);
             if (!recommendedmovies) {
                 return res.status(404).json({
                     message: "recommended movies not found"
@@ -109,9 +156,54 @@ const Homepage = async function (req, res) {
                 .filter(t => t.posterurl && movieIdsOnScreens.includes(t._id.toString()))
                 .slice(0, 8)
                 .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre}));;
+const allowedLanguages = ["Hindi", "English"];
+
+const comedy = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const crime = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Crime") &&
+    !t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const actionAndAdventure = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    (t.genre.includes("Action") || t.genre.includes("Adventure")) &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+const romance = recommendedmovies.filter(t =>
+    t.posterurl &&
+    movieIdsOnScreens.includes(t._id.toString()) &&
+    t.genre.includes("Romance") &&
+    !t.genre.includes("Comedy") &&
+    t.languages.some(lang => allowedLanguages.includes(lang))
+).slice(0, 8).map(t => ({
+    id: t._id, posterurl: t.posterurl, title: t.title,
+    rating: t.rating, language: t.languages
+}));
+
+
             return res.status(200).json({
                 message: "latest movies found",
-                banners, recommended
+                banners, recommended,comedy,romance,actionAndAdventure,crime
             })
 
         } catch (error) {
