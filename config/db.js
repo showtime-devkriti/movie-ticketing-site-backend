@@ -51,6 +51,7 @@ const adminschema = new Schema({
     enum: ALLOWED_CITIES,
     required: true
   },
+  address:String,
   email1: { type: String, unique: true },
   email2: { type: String, unique: true },
   phone1: { type: String, unique: true },

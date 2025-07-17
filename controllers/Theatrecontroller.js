@@ -47,7 +47,7 @@ const getalltheatres = async function (req, res) {
 //   // }
 // })
 
-  .select("theatretitle location"); // include only relevant fields
+  .select("theatretitle location address"); // include only relevant fields
 
     return res.status(200).json({ theatres });
   } catch (err) {
@@ -100,6 +100,11 @@ const theatreById=async function(req,res){
         path:"screenid",
        model:"screens",
        });
+       const theatre = await adminmodel.findById(theatreid).select("theatretitle location address image");
+
+  if (!theatre) {
+    return res.status(404).json({ message: "Theatre not found" });
+  }
           
 const grouped = {};
 for(let show of showtimes){
@@ -119,13 +124,21 @@ for(let show of showtimes){
       
        grouped[moviekey].showtimes.push({
         starttime: show.starttime,
-        screen: show.screenid?.name || "Unknown Screen",
+        screen: show.screenid?.screenName || "Unknown Screen",
         price: show.price,
       });
     
 }
 
-   res.status(200).json(Object.values(grouped));
+   res.status(200).json({
+     theatre: {
+      theatretitle: theatre.theatretitle,
+      location: theatre.location,
+      address: theatre.address,
+      image: theatre.image,
+    },
+    movies: Object.values(grouped)
+   });
      
         
     } catch (err) {

@@ -30,8 +30,9 @@ const adminregister=async function(req,res){
         .regex(/[a-zA-Z]/)
         .regex(/[0-9]/), 
       location:z.enum(ALLOWED_CITIES),
+      address:z.string(),
       screenInfo: z.array(z.object({
-      name: z.string().min(1),
+      screenName: z.string().min(1),
       screenType: z.enum(["bigLayout1","bigLayout2","bigLayout3","bigLayout4"])
     })).min(1).max(10)
     });
@@ -52,6 +53,7 @@ const adminregister=async function(req,res){
       adminusername,
       password,
       location,
+      address,
       screenInfo
     } = req.body;
 
@@ -83,6 +85,7 @@ const adminregister=async function(req,res){
       phone2,
       adminusername,
       location,
+      address,
       paymentregistration: false,
         screenInfo,
       password: hashedPassword
