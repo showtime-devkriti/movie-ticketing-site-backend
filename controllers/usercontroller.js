@@ -4,6 +4,7 @@ const { ALLOWED_CITIES } = require("../constants/cities");
 const {ALLOWED_LANGUAGES}=require("../constants/languages");
 const { bookingmodel } = require("../models/bookingmodel");
 const {showtimemodel}=require("../models/showtimemodel")
+const {contactmodel}=require("../models/contactmodel")
 const {transporter} = require("../constants/mali");
 const { sendOTP } = require("../constants/twilio");
 const userprofile = async function (req, res) {
@@ -197,7 +198,62 @@ const cancelbooking=async function(req,res){
 
 
 }
-const creditcardoffersandcoupouns=async function(req,res){
+
+const contactus=async function (req,res) {
+    const requiredbody = z.object({
+    email: z.string().email(),
+    phonenumber: z.string().regex(/^[6-9]\d{9}$/),
+    fullname: z.string().max(30),
+    description: z.string().max(1000)
+    
+  });
+  const parsed = requiredbody.safeParse(req.body); 
+
+  if (!parsed.success) {
+    console.log("Validation error:", parsed.error.issues);
+    const firstError = parsed.error.issues[0];
+    res.status(400).json({
+      msg: firstError.message || "Invalid input",
+    });
+    return;
+  }
+  const { email,phonenumber,fullname,description}=parsed.data;
+  try {
+
+    const user=await usermodel.findById(req.user.id)
+    if(!user){
+        return res.status(404).json({
+            message:"user not found"
+
+        })
+    }
+
+      await contactmodel.create({ email, phonenumber, fullname, description });
+        await transporter.sendMail({
+          from: process.env.MAIL_USER,
+          to: email,
+          subject: `We’ve received your message, ${fullname}`,
+          html: `
+        <h3>Hi ${fullname},</h3>
+        <p>Thank you for contacting us. We’ve received your message:</p>
+        <blockquote>${description}</blockquote>
+        <p>Our support team will get back to you shortly.</p>
+        <br/>
+        <p>Regards,<br/>Showtime Team</p>
+      `,
+        });
+       return res.status(200).json({
+      msg: "Your message has been received. A confirmation email has been sent to you.",
+    });
+  } catch (error) {
+    console.error(err.message);
+    return res.status(500).json({ msg: "Something went wrong. Please try again later." });
+    
+  }
+
+
+
+
     
 }
 
@@ -206,5 +262,5 @@ const creditcardoffersandcoupouns=async function(req,res){
 
 
 module.exports = {
-    userprofile, userbookings, userlocation,userlanguage,cancelbooking
+    userprofile, userbookings, userlocation,userlanguage,cancelbooking,contactus
 }
