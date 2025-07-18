@@ -59,6 +59,12 @@ const getMovieById=async function(req,res){
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
     }
+    let onscreen=false;
+    const screen = await screenmodel.find({ movieid });
+if (screen.length > 0) {
+  onscreen = true;
+}
+
     const genre=movie.genre;
     const languages=movie.languages;
      const screens = await screenmodel.find({}, 'movieid');
@@ -78,7 +84,7 @@ const getMovieById=async function(req,res){
                 .map(t => ({ id: t._id, posterurl: t.posterurl, title: t.title ,rating:t.rating,language:t.languages,genre:t.genre}));;
 
     return res.status(200).json({
-      movie,moviesYouAlsoLike
+      onscreen,movie,moviesYouAlsoLike
     });
   } catch (error) {
     console.error(error.message)
