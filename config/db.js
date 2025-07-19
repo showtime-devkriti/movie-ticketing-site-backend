@@ -59,10 +59,9 @@ const adminschema = new Schema({
   adminusername: { type: String, unique: true },
   paymentregistration: { type: Boolean, default: false },
    screenInfo: [ {
-      screenName: { type: String, required: true },
-      screenType: { type: String, enum: ["bigLayout1", "bigLayout2", "bigLayout3", "bigLayout4"], required: true }
-    }],
-  screens: [{ type:ObjectId, ref: "Screen" }]
+     type:ObjectId,ref:"screens"
+    }]
+
 
 
 

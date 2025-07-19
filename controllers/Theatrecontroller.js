@@ -47,7 +47,7 @@ const getalltheatres = async function (req, res) {
 //   // }
 // })
 
-  .select("theatretitle location address"); // include only relevant fields
+  .select("theatretitle location address image"); // include only relevant fields
 
     return res.status(200).json({ theatres });
   } catch (err) {

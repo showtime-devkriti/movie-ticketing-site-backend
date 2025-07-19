@@ -6,7 +6,7 @@ const { z } = require("zod");
 const axios = require('axios');
 const authmiddleware = require("../middlewares/adminmiddleware");
 const {ALLOWED_CITIES}=require("../constants/cities");
-const { bigLayout1, bigLayout2, bigLayout3, bigLayout4 }=require("../constants/seatlayouts")
+const { generateSeats }=require("../constants/seatlayouts")
 const {showtimemodel}=require("../models/showtimemodel")
 const {moviemodel}=require("../models/moviemodel")
 const {screenmodel}=require("../models/screenmodel")
@@ -30,11 +30,8 @@ const adminregister=async function(req,res){
         .regex(/[a-zA-Z]/)
         .regex(/[0-9]/), 
       location:z.enum(ALLOWED_CITIES),
-      address:z.string(),
-      screenInfo: z.array(z.object({
-      screenName: z.string().min(1),
-      screenType: z.enum(["bigLayout1","bigLayout2","bigLayout3","bigLayout4"])
-    })).min(1).max(10)
+      address:z.string()
+     
     });
      const parsed = requiredbody.safeParse(req.body); 
      if (!parsed.success) {
@@ -53,8 +50,7 @@ const adminregister=async function(req,res){
       adminusername,
       password,
       location,
-      address,
-      screenInfo
+      address
     } = req.body;
 
      const conflict = await adminmodel.findOne({
@@ -87,7 +83,6 @@ const adminregister=async function(req,res){
       location,
       address,
       paymentregistration: false,
-        screenInfo,
       password: hashedPassword
     });
     return res.status(201).json({
@@ -193,44 +188,24 @@ const addshowtime =async function(req,res){
     if (!screen) {
       return res.status(404).json({ message: "Screen not found" });
     }
-const seatIds = screen.seats.map(seat => seat.seatid);
-    if (!screen.movieid.equals(movieid)) {
-      return res
-        .status(409)
-        .json({ message: "This screen is booked for another movie" });
+
+ const validClasses = screen.seatStructure.map(s => s.class);
+
+    
+    const invalidClasses = Object.keys(price).filter(key => !validClasses.includes(key));
+
+    if (invalidClasses.length > 0) {
+      return res.status(400).json({
+        message: `Invalid seat class(es) in price: ${invalidClasses.join(", ")}`,
+         validSeatClasses: validClasses
+      });
     }
+const seatIds = screen.seats.map(seat => seat.seatid);
+   
      const start = new Date(starttime);
 
-    const existingShow = await showtimemodel.findOne({
-  screenid: screenid,
-  starttime: start
-});
 
-if (existingShow) {
-  return res.status(409).json({
-    message: "This screen is already booked at this time"
-  });
-}
 
-    
-    
-  
-const datePart = start.toISOString().split("T")[0];
-const timePart = start.toISOString().split("T")[1].substring(0,5); 
-if (!screen.days.includes(datePart)) {
-  return res.status(403).json({
-    message: "Showtime date is not allowed on this screen"
-  });
-}
-const timingMatch = screen.timings.find(t => {
-  const tStr = new Date(t).toISOString().split("T")[1].substring(0,5);
-  return tStr === timePart;
-});
-if (!timingMatch) {
-  return res.status(403).json({
-    message: "Showtime time is not available on this screen"
-  });
-}
 if (!movie.languages.includes(language)) {
       return res
         .status(409)
@@ -376,88 +351,65 @@ const addmovie = async function (req, res) {
 };
 
 const addscreen = async function (req, res) {
-  const screenschema = z.object({
-    movieid: z.string(),
+   const screenschema = z.object({
     screenName: z.string(),
-    timings: z.array(z.coerce.date()),
-    days: z.array(z.string().refine(val => !isNaN(Date.parse(val)), {
-      message: 'Invalid date format'
-    })),
-    layout: z.enum(['bigLayout1', 'bigLayout2', 'bigLayout3', 'bigLayout4'])
-
+    seatlayout: z.array(z.object({
+      class: z.string(),
+      rows: z.number().positive(),
+      columns: z.number().positive()
+    }))
   });
+  
 
   const parsed = screenschema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ message: parsed.error.issues[0].message });
   }
 
-  const { movieid, screenName, timings, days,layout } = parsed.data;
+  const {  screenName,seatlayout } = parsed.data;
   const adminid = req.admin.id;
-
   try {
-    const movie = await moviemodel.findById(movieid);
-    if (!movie) {
-      return res.status(404).json({ message: "Movie does not exist" });
-    }
-
-    const admin = await adminmodel.findById(adminid);
-  const screenInfo = admin.screenInfo.find(
-  s => s.screenName && s.screenName.trim().toLowerCase() === screenName.trim().toLowerCase()
-);
-
-
-    if (!screenInfo) {
-      return res.status(400).json({ message: "Invalid screen name" });
-    }
-
-    // Check if same screen already booked on any of the given days
-    const existing = await screenmodel.find({ theatreid: adminid, screenName });
-
-    const conflictingDays = existing.flatMap(s =>
-      s.days.filter(day => days.includes(day))
-    );
-
-    if (conflictingDays.length > 0) {
-      return res.status(409).json({
-        message: `Screen "${screenName}" already booked on: ${[...new Set(conflictingDays)].join(", ")}`
+     const existingScreens = await screenmodel.find({
+      screenName,
+      theatreid: adminid
+    });
+      if (existingScreens.length > 0) {
+      return res.status(400).json({
+        message: "Screen with this name already exists for this theatre"
       });
     }
-
-    // Check duplicate timings
-    const uniqueTimings = [...new Set(timings.map(t => new Date(t).getTime()))];
-    if (uniqueTimings.length !== timings.length) {
-      return res.status(400).json({ message: "Duplicate timings are not allowed" });
-    }
-
-    // Get layout seats
-let seats
-    switch (layout) {
-      case 'bigLayout1': seats = bigLayout1(); break;
-      case 'bigLayout2': seats = bigLayout2(); break;
-      case 'bigLayout3': seats = bigLayout3(); break;
-      case 'bigLayout4': seats = bigLayout4(); break;
-      default: seats = bigLayout1();
-    }
-
-    const screen = await screenmodel.create({
+     const layout=generateSeats(seatlayout)
+       const seatStructure = seatlayout.map(section => ({
+      class: section.class,
+      rows: section.rows,
+      columns: section.columns,
+      totalseats: section.rows * section.columns
+    }));
+     const screen = await screenmodel.create({
       screenName,
-      movieid,
       theatreid: adminid,
-      timings,
-      days,
-      seats
+      seats: layout,
+       seatStructure
     });
-
-    return res.status(201).json({
-      message: "Screen scheduled successfully",
+    await adminmodel.findByIdAndUpdate(adminid, {
+      $addToSet: { screenInfo: screen._id } 
+    });
+      return res.status(201).json({
+      message: "Screen created successfully",
       screen
     });
+    
+  } catch (error) {
+        console.error("Add screen error:", error);
+    return res.status(500).json({ message: "Internal server error while adding screen" });
 
-  } catch (e) {
-    console.error(e);
-    return res.status(500).json({ message: "Internal Server Error" });
+    
   }
+ 
+
+  
+
+   
 };
 
 const deleteshowtime = async (req, res) => {
@@ -490,19 +442,23 @@ const getscreen=async function(req,res){
     try {
        const screens = await screenmodel.find({ theatreid: adminid })
        .select("-seats -__v")
-        .populate("movieid", "title poster rating") 
-      .sort({ createdAt: -1 });
+      
+   
        if (!screens || screens.length === 0) {
       return res.status(404).json({ message: "No screens found for this admin" });
     }
 
         const groupedScreens = {};
          for (const screen of screens) {
-      const key = screen.screenName // group key like "screen1", "screen2"
+          if(screen.screenName!="undefined"){
+             const key = screen.screenName // group key like "screen1", "screen2"
       if (!groupedScreens[key]) {
         groupedScreens[key] = [];
       }
       groupedScreens[key].push(screen);
+
+          }
+     
     }
  return res.status(200).json({
       message: "Screens fetched successfully",

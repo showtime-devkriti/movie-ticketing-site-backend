@@ -13,11 +13,10 @@ const showtimeschema=new Schema({
      format:{type:String,enum:["2D","3D","IMAX"],required:true},
      screenid:{type:ObjectId,ref: "screens",required:true},
      availableseats: [String],
-      seatpricing: {
-    Silver: Number,
-    Gold: Number,
-    Platinum: Number,
-    Diamond: Number
+       seatpricing: {
+    type: Map,
+    of: Number,
+    required: true
   }
 
 
@@ -38,12 +37,7 @@ const showtimevalidation = z.object({
   ),
   format: z.enum(["2D", "3D", "IMAX"]),
 
-  price: z.object({
-    Silver: z.number().positive(),
-    Gold: z.number().positive(),
-    Platinum: z.number().positive(),
-    Diamond: z.number().positive()
-  })
+ price: z.record(z.string(), z.number().positive()) 
 });
 
 

@@ -9,7 +9,6 @@ const seatSchema = new Schema({
   column: { type: Number, required: true },
   seatClass: {
     type: String,
-    enum: ['Silver', 'Gold', 'Platinum', 'Diamond'],
     required: true
   }
 }, { _id: false });
@@ -17,11 +16,16 @@ const seatSchema = new Schema({
 
 const screenschema = new Schema({
    screenName: { type: String, required: true },
-  movieid: { type: ObjectId, ref: "movies", required: true },
   theatreid: { type: ObjectId, ref: "admins", required: true },
-  timings: [{ type: Date, required: true }],
-  days: [{ type: String, required: true }],
-  seats: [seatSchema] // ✅ Embedded seat layout for this screen
+  seats: [seatSchema] ,
+  seatStructure: [  
+    {
+      class: String,
+      rows: Number,
+      columns: Number,
+      totalseats: Number
+    }
+  ]
 }, { timestamps: true });
 
 const screenmodel = mongoose.model("screens", screenschema);
