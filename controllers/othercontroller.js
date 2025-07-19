@@ -2,6 +2,10 @@ const { moviemodel } = require("../models/moviemodel")
 const { screenmodel } = require("../models/screenmodel")
 const { usermodel,adminmodel } = require("../config/db")
 const axios = require("axios");
+require('dotenv').config();
+const https = require("https");
+
+
 
 const Homepage = async function (req, res) {
       console.log(req.check)
@@ -230,15 +234,16 @@ const searchHandle = async function (req, res) {
   }
 
   try {
-    // 1. Search TMDb movies
     const tmdbResponse = await axios.get(
       `https://api.themoviedb.org/3/search/movie`,
       {
         params: {
-          api_key: process.env.TMDB_API_KEY, // keep in .env file
+          api_key: process.env.TMDB_API_KEY,
           query,
           include_adult: false,
         },
+        timeout: 5000, // ⏱ optional timeout
+        httpsAgent: new https.Agent({ keepAlive: false }), // 🔌 prevents ECONNRESET
       }
     );
 
@@ -248,16 +253,13 @@ const searchHandle = async function (req, res) {
       posterurl: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
     }));
 
-    // 2. Search Theatres from DB
     const theatres = await adminmodel.find({
       theatretitle: { $regex: query, $options: "i" },
     }).select("theatretitle location image");
 
-    // 3. Return combined results
     return res.status(200).json({ movies, theatres });
-
   } catch (error) {
-    console.error("Search error:", error.message);
+    console.error("Search error:", error); // full error
     return res.status(500).json({ message: "Internal server error during search" });
   }
 };
