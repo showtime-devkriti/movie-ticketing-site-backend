@@ -107,7 +107,7 @@ try{
 
     // ✅ Set token as HTTP-only cookie
     res.cookie("token", token, {
-      httpOnly: true,
+      httpOnly: false,
       secure: process.env.NODE_ENV === "production", // Set true in production
       sameSite: "Strict", // Or "Lax" depending on your frontend
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days

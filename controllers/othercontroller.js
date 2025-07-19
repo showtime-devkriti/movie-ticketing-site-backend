@@ -1,6 +1,7 @@
 const { moviemodel } = require("../models/moviemodel")
 const { screenmodel } = require("../models/screenmodel")
 const { usermodel,adminmodel } = require("../config/db")
+const axios = require("axios");
 
 const Homepage = async function (req, res) {
       console.log(req.check)
@@ -218,34 +219,49 @@ const romance = recommendedmovies.filter(t =>
 
     }
 }
-const searchHandle=async function(req,res){
-    const query = req.query.query?.trim();
+
+
+
+
+const searchHandle = async function (req, res) {
+  const query = req.query.query?.trim();
   if (!query) {
     return res.status(400).json({ message: "Search query is required" });
   }
+
   try {
-     const movies = await moviemodel.find({
-      title: { $regex: query, $options: "i" }
-    }).select("title posterurl");
+    // 1. Search TMDb movies
+    const tmdbResponse = await axios.get(
+      `https://api.themoviedb.org/3/search/movie`,
+      {
+        params: {
+          api_key: process.env.TMDB_API_KEY, // keep in .env file
+          query,
+          include_adult: false,
+        },
+      }
+    );
 
+    const movies = tmdbResponse.data.results.map((movie) => ({
+      id: movie.id,
+      title: movie.title,
+      posterurl: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+    }));
+
+    // 2. Search Theatres from DB
     const theatres = await adminmodel.find({
-      theatretitle: { $regex: query, $options: "i" }
-    }).select("theatretitle location");
+      theatretitle: { $regex: query, $options: "i" },
+    }).select("theatretitle location image");
 
-    res.status(200).json({
-      movies,
-      theatres
-    });
+    // 3. Return combined results
+    return res.status(200).json({ movies, theatres });
 
-    
   } catch (error) {
-      console.error("Search error:", error.message);
-    res.status(500).json({ message: "Internal server error during search" });
-    
+    console.error("Search error:", error.message);
+    return res.status(500).json({ message: "Internal server error during search" });
   }
+};
 
-
-}
 module.exports = {
     Homepage,searchHandle
 }

@@ -246,7 +246,7 @@ const contactus=async function (req,res) {
       msg: "Your message has been received. A confirmation email has been sent to you.",
     });
   } catch (error) {
-    console.error(err.message);
+    console.error(error.message);
     return res.status(500).json({ msg: "Something went wrong. Please try again later." });
     
   }

@@ -26,7 +26,7 @@ const userschema = new Schema({
   friends: [{ type: ObjectId, ref: "User" }],
   reviews: [
     {
-      movieid: { type: ObjectId, ref: "Movie" },
+      movieid: { type: String },
       rating: Number,
       reviewtext: String,
       createdate: { type: Date, default: Date.now }
