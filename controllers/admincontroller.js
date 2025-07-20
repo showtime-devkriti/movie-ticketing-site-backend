@@ -176,13 +176,7 @@ const addshowtime =async function(req,res){
     
   try {
 
-    const movie=await moviemodel.findById(movieid)
-    if(!movie){
-      return res.status(404).json({
-        message :"movie not found"
-
-      })
-    }
+  
       const screen = await screenmodel.findById(screenid);
       
     if (!screen) {
@@ -205,14 +199,50 @@ const seatIds = screen.seats.map(seat => seat.seatid);
      const start = new Date(starttime);
 
 
-
-if (!movie.languages.includes(language)) {
-      return res
-        .status(409)
-        .json({ message: "This movie is not available in that language" });
+  let moviedata;
+ try {
+     const tmdb_api_key = process.env.TMDB_API_KEY;
+          const response = await axios.get(
+            `https://api.themoviedb.org/3/find/${movieid}?external_source=imdb_id&api_key=${tmdb_api_key}`
+          );
+             const movieResult = response.data.movie_results[0];
+              if (!movieResult) {
+      return res.status(404).json({ message: "Movie not found in TMDB" });
     }
+            const tmdbid=movieResult.id;
+            const movieDetailsRes = await axios.get(
+      `https://api.themoviedb.org/3/movie/${tmdbid}?api_key=${tmdb_api_key}`
+    );
+     const spokenLanguages = movieDetailsRes.data.spoken_languages;
+     const languageExists = spokenLanguages.some(
+        langObj => langObj.english_name.toLowerCase() === language.toLowerCase() ||
+                   langObj.name.toLowerCase() === language.toLowerCase() ||
+                   langObj.iso_639_1.toLowerCase() === language.toLowerCase()
+      );
+    if (!languageExists) {
+        return res.status(409).json({
+          message: "Movie does not exist in the given language"
+        });
+      }
+
+            moviedata = {
+              _id: movieid,
+              title: movieResult.title,
+              genre:movieDetailsRes.data.genres.map(g => g.name)
+            };
+          
+    
+  } catch (error) {
+      console.error("Failed to fetch from TMDB:", err.message);
+      return res.status(404).json({
+        message:"fetching from tmdb failed"
+      })
+    
+  }
  const showtime = await showtimemodel.create({
-      movieid,
+      movieid:moviedata._id,
+      movietitle:moviedata.title,
+      genre:moviedata.genre,
       language,
       theatreid: adminid,
       starttime: start,

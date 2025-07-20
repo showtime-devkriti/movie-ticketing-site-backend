@@ -6,7 +6,9 @@ const { z } = require("zod");
 
 
 const showtimeschema=new Schema({
-    movieid:{type:ObjectId,ref:"movies",required:true},
+    movieid:{type:String,required:true},
+    movietitle:{type:String},
+    genre:[{type:String}],
      theatreid: { type:ObjectId, ref: "admins", required: true },
      language:{type:String},
      starttime:{type:Date,required:true},
@@ -27,7 +29,7 @@ const showtimeschema=new Schema({
 
 
 const showtimevalidation = z.object({
-  movieid: z.string().length(24, "Invalid movie ID"),
+  movieid: z.string(),
   language: z.string().min(1, "Language is required"),
   starttime: z.coerce.date().refine(date => !isNaN(date.getTime()), {
     message: "Invalid start time format"

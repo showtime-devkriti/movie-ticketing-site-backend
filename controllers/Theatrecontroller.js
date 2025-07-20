@@ -2,6 +2,7 @@ const { showtimemodel } = require("../models/showtimemodel");
 const { moviemodel } = require("../models/moviemodel");
 const { screenmodel } = require("../models/screenmodel");
 const {usermodel,adminmodel}=require("../config/db")
+const axios = require("axios");
 
 const getalltheatres = async function (req, res) {
   try {
@@ -57,7 +58,7 @@ const getalltheatres = async function (req, res) {
 };
             
 const theatreById=async function(req,res){
-     const filter = {};
+     
   const { theatreid } = req.params;
   const { date } = req.query;
   const now = new Date();
@@ -91,12 +92,6 @@ const theatreById=async function(req,res){
       theatreid,
       starttime: { $gte: start, $lte: end },
     }).populate({
-        path:"movieid",
-        model:"movies",
-        select:"title language format"
-
-
-    }).populate({
         path:"screenid",
        model:"screens",
        });
@@ -108,16 +103,35 @@ const theatreById=async function(req,res){
           
 const grouped = {};
 for(let show of showtimes){
+  let moviedata=null;
+  try {
+     const tmdb_api_key = process.env.TMDB_API_KEY;
+          const response = await axios.get(
+            `https://api.themoviedb.org/3/find/${show.movieid}?external_source=imdb_id&api_key=${tmdb_api_key}`
+          );
+             const movieResult = response.data.movie_results[0];
+              if (movieResult) {
+            moviedata = {
+              _id: show.imdbid,
+              title: movieResult.title,
+              language: show.language,
+              format: show.format,
+            };
+          }
+    
+  } catch (error) {
+      console.error("Failed to fetch from TMDB:", err.message);
+    
+  }
+  if (!moviedata) continue;
     const moviekey=show.movieid._id;
-    const movietitle=show.movieid.title;
-    const lang =show.language;
-     const format = show.format;
+
 
      if (!grouped[moviekey]) {
         grouped[moviekey] = {
-          movietitle,
-          language: lang,
-          format,
+          movietitle:moviedata.title,
+          language: moviedata.language,
+          format: moviedata.format,
           showtimes: [],
         };
       }
