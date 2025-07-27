@@ -10,6 +10,7 @@ const { generateSeats }=require("../constants/seatlayouts")
 const {showtimemodel}=require("../models/showtimemodel")
 const {moviemodel}=require("../models/moviemodel")
 const {screenmodel}=require("../models/screenmodel")
+const {movieidmodel}=require("../models/movieidmodel")
 require('dotenv').config();
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
@@ -174,7 +175,15 @@ const addshowtime =async function(req,res){
     const screenid=req.params.screenid
     const {movieid,language,starttime,format,price}=req.body;
     
-  try {
+  try { 
+    const alreadyExists = await showtimemodel.findOne({ screenid, starttime });
+
+if (alreadyExists) {
+  return res.status(409).json({
+    message: "A showtime already exists for this screen at the selected time"
+  });
+}
+
 
   
       const screen = await screenmodel.findById(screenid);
@@ -190,7 +199,7 @@ const addshowtime =async function(req,res){
 
     if (invalidClasses.length > 0) {
       return res.status(400).json({
-        message: `Invalid seat class(es) in price: ${invalidClasses.join(", ")}`,
+        message: `Invalid seat class in price: ${invalidClasses.join(", ")}`,
          validSeatClasses: validClasses
       });
     }
@@ -228,12 +237,15 @@ const seatIds = screen.seats.map(seat => seat.seatid);
             moviedata = {
               _id: movieid,
               title: movieResult.title,
-              genre:movieDetailsRes.data.genres.map(g => g.name)
+              genre:movieDetailsRes.data.genres.map(g => g.name),
+              runtime:movieDetailsRes.data.runtime,
+              rating: movieDetailsRes.data.vote_average,
+               poster:`https://image.tmdb.org/t/p/w500${movieDetailsRes.data.poster_path}`
             };
           
     
   } catch (error) {
-      console.error("Failed to fetch from TMDB:", err.message);
+      console.error("Failed to fetch from TMDB:", error.message);
       return res.status(404).json({
         message:"fetching from tmdb failed"
       })
@@ -243,17 +255,30 @@ const seatIds = screen.seats.map(seat => seat.seatid);
       movieid:moviedata._id,
       movietitle:moviedata.title,
       genre:moviedata.genre,
+      runtime:moviedata.runtime,
+      rating:moviedata.rating,
       language,
       theatreid: adminid,
       starttime: start,
       format,
       screenid,
       seatpricing:price,
-      availableseats:seatIds
+      availableseats:seatIds,
+      poster:moviedata.poster
 
     });
+   let movieidadded=null
+  const movieidexist = await movieidmodel.findOne({ movieid: moviedata._id });
 
-    return res.status(201).json({ msg: "Showtime added", showtime });
+    if(!movieidexist){
+      movieidadded=await movieidmodel.create({
+        movieid:moviedata._id
+      })
+    }
+
+    
+
+    return res.status(201).json({ msg: "Showtime added", showtime ,movieidadded});
   
 
     

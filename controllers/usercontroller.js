@@ -32,9 +32,8 @@ const userbookings = async function (req, res) {
   .populate({
     path: "bookinghistory",
     populate: [
-      { path: 'movie', select: 'title posterurl' },
-      { path: 'theatre', select: 'theatretitle location' },
-      { path: 'showtime',select :'starttime seats'}
+      { path: 'theatre', select: 'theatretitle location address' },
+      { path: 'showtime',select :'starttime seats runtime movieid movietitle genre rating'}
     ]
   });
 

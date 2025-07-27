@@ -6,7 +6,12 @@ const bookingschema = new Schema({
   user: { type: ObjectId, ref: 'users', required: true },
   showtime: { type: ObjectId, ref: 'showtimes', required: true },
   theatre: { type: ObjectId, ref: 'admins', required: true },
-  movie: { type: ObjectId, ref: 'movies', required: true },
+
+   movieid:{type:String,required:true},
+    movietitle:{type:String},
+    genre:[{type:String}],
+    runtime:{type:Number},
+    rating: { type: Number, min: 0, max: 10 },
   seats: [String],
   totalprice: Number,
   offerCoupon: String,

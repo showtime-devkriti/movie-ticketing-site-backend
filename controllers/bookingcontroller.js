@@ -41,7 +41,12 @@ for (const s of seats) {
   if (!category) {
     return res.status(400).json({ msg: `Invalid seat ID: ${s}` });
   }
-  const price = showtime.seatpricing[category];
+ console.log("Showtime ID:", showtime._id);
+console.log("Seat Pricing:", showtime.seatpricing);
+
+  const price = showtime.seatpricing.get(category);
+
+  
   if (!price) {
     return res.status(400).json({ msg: `No price set for seat class: ${category}` });
   }
@@ -147,7 +152,11 @@ const validation=async function(req,res){
     user: userId,
     showtime: showtimeid,
     theatre: showtime.theatreid,
-    movie: showtime.movieid,
+    movieid: showtime.movieid,
+    movietitle:showtime.movietitle,
+    runtime:showtime.runtime,
+    genre:showtime.genre,
+    rating:showtime.rating,
     seats,
     totalprice: total,
  
@@ -162,7 +171,7 @@ const validation=async function(req,res){
    showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
   await showtime.save();
     console.log("Booking complete and pushed to history");
-    const movie = await moviemodel.findById(showtime.movieid);
+   
 const theatre = await adminmodel.findById(showtime.theatreid);
     const ticketsDir = path.join(__dirname, "../tickets");
     if (!fs.existsSync(ticketsDir)) {
@@ -171,10 +180,12 @@ const theatre = await adminmodel.findById(showtime.theatreid);
 
 const ticketPath = path.join(ticketsDir, `ticket-${booking._id}.pdf`);
 const bookingData={
-  title: movie.title,
+  title: showtime.movietitle,
+  Poster:showtime.poster,
   language:showtime.language,
   format: showtime.format,
   theatretitle: theatre.theatretitle,
+  Address:theatre.address,
   location:theatre.location,
   startTime: showtime.starttime, // or "Screen 1" etc.
   seats,

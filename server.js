@@ -16,7 +16,7 @@ const cors = require("cors");
 
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
+    origin: "http://localhost:5174", // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
     credentials:true
