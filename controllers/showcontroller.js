@@ -79,6 +79,8 @@ const userlocation = user.location;
       if (!acc[key]) {
         acc[key] = {
           theatre: theatreName,
+          address:show.screenid.theatreid.address,
+          location:show.screenid.theatreid.location,
           screenid,
           screenName: show.screenid.screenName,
 
