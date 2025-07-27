@@ -80,6 +80,8 @@ const userlocation = user.location;
         acc[key] = {
           theatre: theatreName,
           screenid,
+          screenName: show.screenid.screenName,
+
           format: show.format,
           language: show.language,
           price: show.price,
