@@ -72,28 +72,37 @@ const userlocation = user.location;
     );
    
     const grouped = validShowtimes.reduce((acc, show) => {
-      const theatreName = show.screenid.theatreid.theatretitle;
-      const screenid = show.screenid._id;
-      const key = `${theatreName}_${screenid}_${show.format}_${show.language}`;
+  const theatreName = show.screenid.theatreid.theatretitle;
+  const key = `${theatreName}_${show.format}_${show.language}`;
 
-      if (!acc[key]) {
-        acc[key] = {
-          theatre: theatreName,
-          address:show.screenid.theatreid.address,
-          location:show.screenid.theatreid.location,
-          screenid,
-          screenName: show.screenid.screenName,
+  if (!acc[key]) {
+    acc[key] = {
+      theatre: theatreName,
+      address: show.screenid.theatreid.address,
+      location: show.screenid.theatreid.location,
+      format: show.format,
+      language: show.language,
+      screens: []
+    };
+  }
 
-          format: show.format,
-          language: show.language,
-          price: show.price,
-          timings: [],
-        };
-      }
-   
-       acc[key].timings.push(show.starttime);
-      return acc;
-    }, {});
+  const screenEntry = acc[key].screens.find(
+    s => s.screenid.toString() === show.screenid._id.toString()
+  );
+
+  if (screenEntry) {
+    screenEntry.timings.push(show.starttime);
+  } else {
+    acc[key].screens.push({
+      screenid: show.screenid._id,
+      screenName: show.screenid.screenName,
+      price: show.seatpricing,
+      timings: [show.starttime]
+    });
+  }
+
+  return acc;
+}, {});
 
 
    return res.status(200).json(Object.values(grouped));
