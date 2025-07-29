@@ -5,6 +5,7 @@ const {ObjectId}=mongoose.Schema.Types;
 const bookingschema = new Schema({
   user: { type: ObjectId, ref: 'users', required: true },
   showtime: { type: ObjectId, ref: 'showtimes', required: true },
+  starttime:{type:Date},
   theatre: { type: ObjectId, ref: 'admins', required: true },
 
    movieid:{type:String,required:true},

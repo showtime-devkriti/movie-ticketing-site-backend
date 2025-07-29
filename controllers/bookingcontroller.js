@@ -151,6 +151,7 @@ const validation=async function(req,res){
   const booking = await bookingmodel.create({
     user: userId,
     showtime: showtimeid,
+    starttime:showtime.starttime,
     theatre: showtime.theatreid,
     movieid: showtime.movieid,
     movietitle:showtime.movietitle,
