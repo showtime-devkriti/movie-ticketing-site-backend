@@ -53,6 +53,9 @@ const userlocation = user.location;
   }
   if(format)filter.format=format;
   if(language)filter.language=language;
+console.log("Raw showtime filter:", filter);
+const showtimes = await showtimemodel.find(filter);
+console.log("Showtimes without populate:", showtimes);
 
   try {
     const showtimes=await showtimemodel.find(filter).populate({
@@ -82,6 +85,9 @@ const userlocation = user.location;
       location: show.screenid.theatreid.location,
       format: show.format,
       language: show.language,
+      runtime:show.runtime,
+      rating:show.rating,
+      genre:show.genre,
       screens: []
     };
   }
@@ -91,13 +97,16 @@ const userlocation = user.location;
   );
 
   if (screenEntry) {
-    screenEntry.timings.push(show.starttime);
+    screenEntry.timings.push({showid:show._id,starttime: show.starttime});
   } else {
     acc[key].screens.push({
       screenid: show.screenid._id,
       screenName: show.screenid.screenName,
       price: show.seatpricing,
-      timings: [show.starttime]
+      timings: [{ showid: show._id, starttime: show.starttime }]
+
+      
+     
     });
   }
 
@@ -122,4 +131,34 @@ const userlocation = user.location;
      
    
 }
-module.exports = { getShowTimes };
+
+const showtime=async function(req,res){
+  const showtimeid = req.params.showtimeid;
+  if(!showtimeid){
+    return res.status(409).json({
+      message:"showtimeid is not there in the params"
+    })
+  }
+  try {
+     const showtime=await showtimemodel.findById(showtimeid);
+     if(!showtime){
+      return res.status(404).json({
+        message:"showtime not found"
+      })
+     }
+     const screen=await screenmodel.findById()
+return res.status(200).json({
+  showtime
+
+})
+    
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({
+      message:"internal server error"
+    })
+    
+  }
+ 
+}
+module.exports = { getShowTimes,showtime };
