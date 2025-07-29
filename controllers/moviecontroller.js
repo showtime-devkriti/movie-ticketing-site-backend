@@ -1,6 +1,7 @@
 const { adminmodel,usermodel } = require("../config/db");
 const {moviemodel}=require("../models/moviemodel")
 const {screenmodel}=require("../models/screenmodel")
+const {movieidmodel}=require("../models/movieidmodel")
 const axios = require("axios");
 require("dotenv").config();
 
@@ -256,11 +257,43 @@ const usersWithReviews = await usermodel.find({ "reviews.movieid": imdbid });
   }
 };
 
+const ismovieonscreen=async (req,res)=>{
+  const movieid=req.query.movieid;
+  if(!movieid){
+    return res.status(409).json({
+      message:"enter the movieid in the query"
+    })
+  }
+  try {
+    let isonscreen
+  const isexists=await movieidmodel.findOne({movieid});
+  if(!isexists){
+    return res.status(404).json({
+      isonscreen:false
+      
+    })
+  }else{
+    return res.status(200).json({
+      isonscreen:true
+    })
+  }
+
+    
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).json({
+      message:"internal server error"
+    })
+    
+  }
+
+}
+
 
 
 
 
 module.exports={  
-    getallmovies,getMovieById
+    getallmovies,getMovieById,ismovieonscreen
 }
 
