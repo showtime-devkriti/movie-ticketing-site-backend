@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Socket Test</title></head>
+  <body>
+    <h3>Seat Selection</h3>
+    <button onclick="selectSeat()">Select Seat A1</button>
+    <button onclick="unselectSeat()">Unselect Seat A1</button>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+      const socket = io("http://localhost:3000");
+      const showtimeid = "688a619a1b744ad5f07665d1"; // replace this
+      const userId = "user_" + Math.floor(Math.random() * 1000);
+
+      socket.on("connect", () => {
+        console.log("Connected:", socket.id);
+        socket.emit("join-showtime", { showtimeid });
+      });
+
+      socket.on("seat-locked", (data) => {
+        console.log("Seat locked:", data);
+      });
+
+      socket.on("seat-unlocked", (data) => {
+        console.log("Seat unlocked:", data);
+      });
+
+      function selectSeat() {
+        socket.emit("select-seat", {
+          showtimeid,
+          seatid: "A1",
+          userId
+        });
+      }
+
+      function unselectSeat() {
+        socket.emit("unselect-seat", {
+          showtimeid,
+          seatid: "A1",
+          userId
+        });
+      }
+    </script>
+  </body>
+</html>

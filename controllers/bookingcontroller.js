@@ -5,6 +5,7 @@ const {usermodel}=require("../config/db")
 // const { moviemodel } = require("../models/moviemodel");
 const { adminmodel } = require("../config/db");
 const { sendTicket } = require("../constants/mali");
+const {lockedSeats}=require("../constants/websockets")
 const Razorpay = require("razorpay");
 const generateTicket = require("../constants/generateticket");
 const path = require("path");

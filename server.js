@@ -12,14 +12,15 @@ const { theatrerouter }=require("./Routes/theatreroutes")
 const {additionalrouter}=require("./Routes/otherroutes")
 const {bookingrouter}=require("./Routes/bookingroutes")
 const {paymentrouter}=require("./Routes/paymentroutes")
-const showtimemodel = require("./models/showtimemodel"); 
+const {showtimemodel} = require("./models/showtimemodel");
+const {lockedSeats}=require("./constants/websockets") 
 const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const cors = require("cors");
 
 app.use(cookieParser());
 app.use(cors({
-    origin: "http://localhost:5173", // Allow all origins, you can specify specific origins if needed
+    origin: ["http://localhost:5173","http://localhost:5500"], // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
     credentials:true
@@ -39,7 +40,6 @@ startShowtimeCleanupJob();
 
 
 
-const lockedSeats = new Map();
 function cleanupExpiredLocks(){
   const now = Date.now();
   const lockDuration = 10 * 60 * 1000;
@@ -72,7 +72,7 @@ setInterval(cleanupExpiredLocks, 60 * 1000);
    const server=http.createServer(app);
    const io=new socketIO.Server(server,{
     cors:{
-      origin:"http://localhost:5173",
+      origin:["http://localhost:5173","http://localhost:5500"], 
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     }
