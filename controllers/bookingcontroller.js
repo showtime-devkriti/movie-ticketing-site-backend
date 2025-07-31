@@ -2,7 +2,7 @@ const {bookingmodel}=require("../models/bookingmodel")
 const {showtimemodel}=require("../models/showtimemodel")
 const {screenmodel}=require("../models/screenmodel")
 const {usermodel}=require("../config/db")
-const { moviemodel } = require("../models/moviemodel");
+// const { moviemodel } = require("../models/moviemodel");
 const { adminmodel } = require("../config/db");
 const { sendTicket } = require("../constants/mali");
 const Razorpay = require("razorpay");
@@ -30,11 +30,34 @@ const screen = await screenmodel.findById(showtime.screenid);
   for (const seat of screen.seats) {
     seatMap[seat.seatid] = seat.seatClass;
   }
+     const currentlyLockedSeatsForShowtime = lockedSeats.get(showtimeid) || new Map();
+      const bookedOrLockedSeats = [];
 
- const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
-  if (alreadyBooked.length > 0) {
-    return res.status(409).json({ msg: "Some seats already booked", alreadyBooked });
-  }
+       for (const selectedSeatId of seats) {
+            // Check if seat is already permanently booked
+            if (!showtime.availableseats.includes(selectedSeatId)) {
+                bookedOrLockedSeats.push({ seatid: selectedSeatId, reason: "already booked" });
+            }
+            // Check if seat is temporarily locked by another user
+            else if (currentlyLockedSeatsForShowtime.has(selectedSeatId)) {
+                const lockInfo = currentlyLockedSeatsForShowtime.get(selectedSeatId);
+                // If locked by someone else
+                if (lockInfo.userId !== userId) { // Assuming userId is passed via middleware
+                     bookedOrLockedSeats.push({ seatid: selectedSeatId, reason: "temporarily locked by another user" });
+                }
+                // If locked by this user, it's fine, proceed
+            }
+        }
+         if (bookedOrLockedSeats.length > 0) {
+            return res.status(409).json({ msg: "Some seats are unavailable", unavailableSeats: bookedOrLockedSeats });
+        }
+
+
+
+//  const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
+//   if (alreadyBooked.length > 0) {
+//     return res.status(409).json({ msg: "Some seats already booked", alreadyBooked });
+//   }
   let total = 0;
 for (const s of seats) {
   const category = seatMap[s];
@@ -144,10 +167,39 @@ const validation=async function(req,res){
   const showtime = await showtimemodel.findById(showtimeid);
   if (!showtime) return res.status(404).json({ msg: "Showtime not found" });
 
-  const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
-  if (alreadyBooked.length > 0) {
-    return res.status(409).json({ msg: "Some seats just got booked", alreadyBooked });
-  }
+  // const alreadyBooked = seats.filter(s => !showtime.availableseats.includes(s));
+  // if (alreadyBooked.length > 0) {
+  //   return res.status(409).json({ msg: "Some seats just got booked", alreadyBooked });
+  // }
+   const io = req.app.get("io");
+   const currentlyLockedSeatsForShowtime = lockedSeats.get(showtimeid);
+
+        if (currentlyLockedSeatsForShowtime) {
+            for (const bookedSeatId of seats) {
+                if (currentlyLockedSeatsForShowtime.has(bookedSeatId)) {
+                    // Remove the temporary lock for this seat
+                    currentlyLockedSeatsForShowtime.delete(bookedSeatId);
+                    console.log(`Temporary lock released for showtime: ${showtimeid}, seat: ${bookedSeatId}`);
+
+                    // Emit to all clients in the showtime's room that this seat is now permanently booked
+                    if (io) {
+                        io.to(showtimeid).emit("seat-booked-permanently", { showtimeid, seatid: bookedSeatId });
+                        console.log(`Emitted 'seat-booked-permanently' for showtime: ${showtimeid}, seat: ${bookedSeatId}`);
+                    }
+                }
+            }
+            // If no more seats are locked for this showtime, remove the showtime entry from the map
+            if (currentlyLockedSeatsForShowtime.size === 0) {
+                lockedSeats.delete(showtimeid);
+                console.log(`All temporary locks cleared for showtime: ${showtimeid}`);
+            }
+        }
+        // --- END NEW ---
+
+        // Update available seats in the showtime document
+        showtime.availableseats = showtime.availableseats.filter(s => !seats.includes(s));
+        await showtime.save();
+        console.log("Showtime availableseats updated in DB");
   const booking = await bookingmodel.create({
     user: userId,
     showtime: showtimeid,
@@ -227,46 +279,3 @@ await sendTicket({
 module.exports={
     getSeatLayoutForShowtime,initiatebooking,validation
 }
-// const createorder=async function(req,res){
-
-  
-
-
-
-//   try {
-//     const options =req.body
-    
-//     const order = await razorpay.orders.create(options);
-//     if(!order){
-//       return res.status(500).json({
-//         message:"order is empty"
-//       })
-//     }
-//     return res.status(200).json(order);
-//   } catch (err) {
-//     console.error(err)
-//     return res.status(500).json({ message: "Failed to create Razorpay order" });
-//   }
-
-// }// const createorder=async function(req,res){
-
-  
-
-
-
-//   try {
-//     const options =req.body
-    
-//     const order = await razorpay.orders.create(options);
-//     if(!order){
-//       return res.status(500).json({
-//         message:"order is empty"
-//       })
-//     }
-//     return res.status(200).json(order);
-//   } catch (err) {
-//     console.error(err)
-//     return res.status(500).json({ message: "Failed to create Razorpay order" });
-//   }
-
-// }

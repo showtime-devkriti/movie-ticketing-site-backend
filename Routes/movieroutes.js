@@ -9,7 +9,7 @@ movierouter.get("/allmovies",optionalauthmiddleware,getallmovies);
 
  
 movierouter.get("/:id/showtimes",usermiddleware,getShowTimes)
-movierouter.get("/:showtimeid",usermiddleware,showtime)
+
 movierouter.get("/:id",getMovieById);
 
 
