@@ -130,7 +130,7 @@ const screen = await screenmodel.findById(showtime.screenid);
       row: seat.row,
       column: seat.column,
       seatClass: seat.seatClass,
-      //price:showtime.seatpricing,
+      price: showtime.seatpricing.get(seat.seatClass),
       status: showtime.availableseats.includes(seat.seatid)
         ? "available"
         : "booked",
@@ -142,7 +142,7 @@ const screen = await screenmodel.findById(showtime.screenid);
       screenid: screen._id,
       showtimeid: showtime._id,
       seatLayout: seatStatus,
-        pricing:showtime.seatpricing, 
+        // pricing:showtime.seatpricing, 
     });
 
         
