@@ -153,6 +153,13 @@ role: "admin",
 username: admin.adminusername
 }, JWT_ADMIN_PASS, { expiresIn: "7d" })
 
+res.cookie("admin", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production", // Set true in production
+      sameSite: "Strict", // Or "Lax" depending on your frontend
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
    return res.status(201).json({
     token,
     status: "success",

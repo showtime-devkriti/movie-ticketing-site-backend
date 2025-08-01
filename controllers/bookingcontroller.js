@@ -125,18 +125,24 @@ const screen = await screenmodel.findById(showtime.screenid);
     }
 
     const seatStatus = screen.seats.map(seat => ({
+      
       seatid: seat.seatid,
       row: seat.row,
       column: seat.column,
       seatClass: seat.seatClass,
+      //price:showtime.seatpricing,
       status: showtime.availableseats.includes(seat.seatid)
         ? "available"
-        : "booked"
+        : "booked",
+      
+        
     }));
+    
      return res.status(200).json({
       screenid: screen._id,
       showtimeid: showtime._id,
-      seatLayout: seatStatus
+      seatLayout: seatStatus,
+        pricing:showtime.seatpricing, 
     });
 
         

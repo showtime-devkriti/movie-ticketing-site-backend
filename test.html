@@ -3,8 +3,8 @@
   <head><title>Socket Test</title></head>
   <body>
     <h3>Seat Selection</h3>
-    <button onclick="selectSeat()">Select Seat A1</button>
-    <button onclick="unselectSeat()">Unselect Seat A1</button>
+    <button onclick="selectSeat()">Select Seat A2</button>
+    <button onclick="unselectSeat()">Unselect Seat A2</button>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
       const socket = io("http://localhost:3000");
@@ -27,7 +27,7 @@
       function selectSeat() {
         socket.emit("select-seat", {
           showtimeid,
-          seatid: "A1",
+          seatid: "A2",
           userId
         });
       }
@@ -35,7 +35,7 @@
       function unselectSeat() {
         socket.emit("unselect-seat", {
           showtimeid,
-          seatid: "A1",
+          seatid: "A2",
           userId
         });
       }
