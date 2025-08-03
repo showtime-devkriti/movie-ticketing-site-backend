@@ -510,14 +510,13 @@ const getscreen=async function(req,res){
       return res.status(404).json({ message: "No screens found for this admin" });
     }
 
-        const groupedScreens = {};
+        const groupedScreens = [];
+        let helper=0;
          for (const screen of screens) {
           if(screen.screenName!="undefined"){
-             const key = screen.screenName // group key like "screen1", "screen2"
-      if (!groupedScreens[key]) {
-        groupedScreens[key] = [];
-      }
-      groupedScreens[key].push(screen);
+             const key = helper++; 
+      
+      groupedScreens[key]=screen;
 
           }
      

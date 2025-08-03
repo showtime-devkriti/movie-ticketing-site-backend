@@ -27,6 +27,9 @@ if (!showtime) return res.status(404).json({ msg: "Showtime not found" });
 const screen = await screenmodel.findById(showtime.screenid);
   if (!screen) return res.status(404).json({ msg: "Screen not found" });
 
+  
+
+
   const seatMap = {};
   for (const seat of screen.seats) {
     seatMap[seat.seatid] = seat.seatClass;
@@ -137,11 +140,35 @@ const screen = await screenmodel.findById(showtime.screenid);
       
         
     }));
+    const theatre=await adminmodel.findById(showtime.theatreid)
+  if(!theatre){
+    return res.status(404).json({
+      msg:"theatre not found"
+    })
+  }
+      const theatreDetails={
+    theatretitle:theatre.theatretitle,
+    location:theatre.location,
+    address:theatre.address,
+    poster:theatre.image
+  }
+  const showtimeDetails={
+    format:showtime.format,
+    movietitle:showtime.movietitle,
+    genre:showtime.genre,
+    language:showtime.language,
+    starttime:showtime.starttime,
+    runtime:showtime.runtime,
+    rating:showtime.rating,
+    poster:showtime.poster
+  }
     
      return res.status(200).json({
-      screenid: screen._id,
+      screenName: screen.screenName,
       showtimeid: showtime._id,
       seatLayout: seatStatus,
+      theatreDetails,
+      showtime:showtimeDetails
         // pricing:showtime.seatpricing, 
     });
 
