@@ -1,6 +1,6 @@
 const Router = require("express");
 const adminrouter = Router();
-const {adminregister,adminlogin}=require("../controllers/admincontroller");
+const {adminregister,adminlogin,admincompleteregister}=require("../controllers/admincontroller");
 const {adminmodel}=require("../config/db");
 const { adminmiddleware } = require("../middlewares/adminmiddleware");
 const { addmovie,addshowtime,addscreen,deleteshowtime,getscreen } = require("../controllers/admincontroller");
@@ -31,6 +31,7 @@ adminrouter.post("/movies",adminmiddleware,addmovie);
 adminrouter.post("/screenpost",adminmiddleware,addscreen);
 adminrouter.delete("/showtimedelete/:id",adminmiddleware,deleteshowtime);
 adminrouter.get("/getscreen",adminmiddleware,getscreen);
+adminrouter.post("/completeregister/:id",admincompleteregister)
 
 
 

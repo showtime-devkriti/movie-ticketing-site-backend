@@ -48,8 +48,7 @@ const adminschema = new Schema({
   image:String,
   location: {
     type: String,
-    enum: ALLOWED_CITIES,
-    required: true
+    enum: ALLOWED_CITIES
   },
   address:String,
   email1: { type: String, unique: true },

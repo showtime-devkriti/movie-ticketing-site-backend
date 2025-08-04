@@ -18,8 +18,8 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const adminregister=async function(req,res){
   const requiredbody = z.object({
-      theatretitle: z.string().max(55),
-      image:z.string().url(),
+      // theatretitle: z.string().max(55),
+      // image:z.string().url(),
       phone1: z.string().regex(/^[6-9]\d{9}$/),
       phone2: z.string().regex(/^[6-9]\d{9}$/),
       email1: z.string().email(),
@@ -30,8 +30,8 @@ const adminregister=async function(req,res){
         .min(8) 
         .regex(/[a-zA-Z]/)
         .regex(/[0-9]/), 
-      location:z.enum(ALLOWED_CITIES),
-      address:z.string()
+      // location:z.enum(ALLOWED_CITIES),
+      // address:z.string()
      
     });
      const parsed = requiredbody.safeParse(req.body); 
@@ -42,16 +42,16 @@ const adminregister=async function(req,res){
 
  
     const {
-      theatretitle,
-      image,
+      // theatretitle,
+      // image,
       phone1,
       phone2,
       email1,
       email2,
       adminusername,
       password,
-      location,
-      address
+      // location,
+      // address
     } = req.body;
 
      const conflict = await adminmodel.findOne({
@@ -74,15 +74,15 @@ const adminregister=async function(req,res){
   try {
      const hashedPassword = await bcrypt.hash(password, 10);
       const admin = await adminmodel.create({
-      theatretitle,
-      image,
+      // theatretitle,
+      // image,
       email1,
       email2,
       phone1,
       phone2,
       adminusername,
-      location,
-      address,
+      // location,
+      // address,
       paymentregistration: false,
       password: hashedPassword
     });
@@ -106,6 +106,63 @@ const adminregister=async function(req,res){
 
 
 
+}
+
+const admincompleteregister=async function(req,res){
+  const adminid=req.params.id;
+  const requiredbody=z.object({
+    theatretitle: z.string().max(55),
+      image:z.string().url(),
+       location:z.enum(ALLOWED_CITIES),
+      address:z.string()
+
+  })
+ const parsed = requiredbody.safeParse(req.body); 
+     if (!parsed.success) {
+    const firstError = parsed.error.issues[0];
+    return res.status(400).json({ msg: firstError.message || "Invalid input" });
+  }
+      const {
+      theatretitle,
+      image,
+      location,
+      address
+    } = req.body;
+  try {
+    const admin=await adminmodel.findById(adminid)
+    if(!admin){
+      return res.status(404).json({
+        message:"admin not found"
+      })
+    }
+    admin.theatretitle=theatretitle
+    admin.image=image
+    admin.location=location
+    admin.address=address
+
+     await admin.save();
+      return res.status(200).json({
+      message: "Admin theatre details updated successfully",
+      admin: {
+        id: admin._id,
+        theatretitle: admin.theatretitle,
+        image: admin.image,
+        location: admin.location,
+        address: admin.address,
+      },
+    });
+
+    
+  } catch (error) {
+    console.error("error message"+error.message)
+    return res.status(500).json({
+      message:"internal server error"
+
+    })
+    
+  }
+
+  
 }
 
 const adminlogin =async function(req,res){
@@ -551,7 +608,7 @@ const getscreen=async function(req,res){
 
 module.exports = {
   adminlogin,adminregister,addshowtime,addmovie,
-  addscreen,deleteshowtime,getscreen
+  addscreen,deleteshowtime,getscreen,admincompleteregister
 };
 // const addscreen=async function(req,res){
 //    const screenschema=z.object({
