@@ -33,7 +33,7 @@ const userbookings = async function (req, res) {
     path: "bookinghistory",
     populate: [
       { path: 'theatre', select: 'theatretitle location address' },
-      { path: 'showtime',select :'starttime seats runtime movieid movietitle genre rating'}
+      { path: 'showtime',select :'starttime seats runtime movieid movietitle genre rating poster'}
     ]
   });
 

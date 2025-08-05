@@ -20,7 +20,7 @@ const cors = require("cors");
 
 app.use(cookieParser());
 app.use(cors({
-    origin: ["http://localhost:5174","http://localhost:5500","http://192.168.67.185:5173"], // Allow all origins, you can specify specific origins if needed
+    origin: ["http://localhost:5173","http://localhost:5174","http://localhost:5500","http://192.168.67.185:5173"], // Allow all origins, you can specify specific origins if needed
     methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
     credentials:true
@@ -72,7 +72,7 @@ setInterval(cleanupExpiredLocks, 60 * 1000);
    const server=http.createServer(app);
    const io=new socketIO.Server(server,{
     cors:{
-      origin:["http://localhost:5174","http://localhost:5500","http://192.168.67.185:5173"], 
+      origin:["http://localhost:5173","http://localhost:5174","http://localhost:5500","http://192.168.67.185:5173"], 
       methods: ["GET", "POST", "PUT", "DELETE"],
       credentials: true,
     }
