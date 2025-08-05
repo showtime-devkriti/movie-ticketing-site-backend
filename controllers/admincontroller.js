@@ -591,6 +591,31 @@ const getscreen=async function(req,res){
 
 }
 
+const getallshowtimes=async function(req,res){
+     const adminid=req.admin.id;
+     try {
+      const showtime=await showtimemodel.find({theatreid:adminid})
+    
+
+      const showtimeorder=showtime.sort((a,b)=>{
+        return new Date(a.starttime)-new Date(b.starttime)
+      })
+      return res.status(200).json({
+        showtimeorder
+      })
+      
+
+      
+     } catch (error) {
+      console.error(error.message);
+      return res.status(404).json({
+        message:"admin not found or invalid token"
+      })
+      
+     }
+}
+
+
 
 
 
@@ -608,7 +633,7 @@ const getscreen=async function(req,res){
 
 module.exports = {
   adminlogin,adminregister,addshowtime,addmovie,
-  addscreen,deleteshowtime,getscreen,admincompleteregister
+  addscreen,deleteshowtime,getscreen,admincompleteregister,getallshowtimes
 };
 // const addscreen=async function(req,res){
 //    const screenschema=z.object({

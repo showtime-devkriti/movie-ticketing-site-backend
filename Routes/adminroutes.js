@@ -3,7 +3,7 @@ const adminrouter = Router();
 const {adminregister,adminlogin,admincompleteregister}=require("../controllers/admincontroller");
 const {adminmodel}=require("../config/db");
 const { adminmiddleware } = require("../middlewares/adminmiddleware");
-const { addmovie,addshowtime,addscreen,deleteshowtime,getscreen } = require("../controllers/admincontroller");
+const { addmovie,addshowtime,addscreen,deleteshowtime,getscreen ,getallshowtimes} = require("../controllers/admincontroller");
 const {showtimemiddleware}=require("../middlewares/showtimemiddleware")
 
 adminrouter.post("/register", adminregister);
@@ -32,6 +32,7 @@ adminrouter.post("/screenpost",adminmiddleware,addscreen);
 adminrouter.delete("/showtimedelete/:id",adminmiddleware,deleteshowtime);
 adminrouter.get("/getscreen",adminmiddleware,getscreen);
 adminrouter.post("/completeregister/:id",admincompleteregister)
+adminrouter.get("/getshowtimes",adminmiddleware,getallshowtimes)
 
 
 
