@@ -21,8 +21,7 @@ const getalltheatres = async function (req, res) {
         return res.status(400).json({ message: "Please set your location to browse theatres" });
       }
 
-      // If location is a populated object, use its name or id
-      resolvedLocation = user.location.name || user.location; // adjust based on how your model looks
+      resolvedLocation = user.location.name || user.location; 
     } else if (req.query.location) {
       resolvedLocation = req.query.location;
     } else {
@@ -48,7 +47,7 @@ const getalltheatres = async function (req, res) {
 //   // }
 // })
 
-  .select("theatretitle location address image"); // include only relevant fields
+  .select("theatretitle location address image"); 
 
     return res.status(200).json({ theatres });
   } catch (err) {

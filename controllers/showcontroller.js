@@ -54,8 +54,7 @@ const userlocation = user.location;
   if(format)filter.format=format;
   if(language)filter.language=language;
 console.log("Raw showtime filter:", filter);
-const showtimes = await showtimemodel.find(filter);
-console.log("Showtimes without populate:", showtimes);
+console.log("User location:", userlocation);
 
   try {
     const showtimes=await showtimemodel.find(filter).populate({
@@ -69,6 +68,11 @@ console.log("Showtimes without populate:", showtimes);
 
 
     })
+    console.log(
+  "Theatre locations:",
+  showtimes.map(st => st.screenid?.theatreid?.location)
+);
+
  
     const validShowtimes = showtimes.filter(
       (show) => show.screenid && show.screenid.theatreid

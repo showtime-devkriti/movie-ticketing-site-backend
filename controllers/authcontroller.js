@@ -6,67 +6,103 @@ const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const authmiddleware = require("../middlewares/authmiddleware");
 const {ALLOWED_CITIES}=require("../constants/cities");
-const {transporter} = require("../constants/mali");
-const { sendOTP } = require("../constants/twilio");
-const userregister= async function (req, res) {
+require("dotenv").config();
+const {otpmodel}=require("../models/otpmodel")
+const nodemailer = require("nodemailer");
+
+
+
+const sendOTP = async (target, via, otp) => {
+  if (via === "email") {
+    let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: target,
+      subject: "Your Verification OTP",
+      text: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+    });
+
+  } else if (via === "phone") {
+    const client = twilio(process.env.TWILIO_SID, process.env.TWILIO_AUTH);
+    await client.messages.create({
+      body: `Your OTP is ${otp}. It will expire in 5 minutes.`,
+      from: process.env.TWILIO_PHONE,
+      to: `+91${target}`,
+    });
+  }
+};
+
+const userregister = async function (req, res) {
   const requiredbody = z.object({
-    email: z.string().email(),
-    password: z
-      .string()
-      .min(8) 
-      .regex(/[a-zA-Z]/)
-      .regex(/[0-9]/), 
+    email: z.string().email().optional(),
+    password: z.string().min(8).regex(/[a-zA-Z]/).regex(/[0-9]/),
     username: z.string().regex(/^[a-zA-Z0-9._-]{3,20}$/),
-    phonenumber: z.string().regex(/^[6-9]\d{9}$/),
+    phonenumber: z.string().regex(/^[6-9]\d{9}$/).optional(),
     fullname: z.string().max(30)
-    
   });
 
-  const parsed = requiredbody.safeParse(req.body); 
-
+  const parsed = requiredbody.safeParse(req.body);
   if (!parsed.success) {
-    console.log("Validation error:", parsed.error.issues);
     const firstError = parsed.error.issues[0];
-    res.status(400).json({
-      msg: firstError.message || "Invalid input",
-    });
-    return;
+    return res.status(400).json({ msg: firstError.message || "Invalid input" });
   }
 
   const { email, password, phonenumber, fullname, username } = req.body;
+
+  // Check for existing user
   const conflict = await usermodel.findOne({
-$or: [{ email }, { phonenumber }, { username }]
-});
-if (conflict) {
-if (conflict.email === email) {
-return res.status(409).json({ msg: "Email already registered" });
-} else if (conflict.phonenumber === phonenumber) {
-return res.status(409).json({ msg: "Phone number already registered" });
-} else {
-return res.status(409).json({ msg: "Username already taken" });
-}
-}
- 
-  try {
-    const hashedpassword = await bcrypt.hash(password, 5);
-    await usermodel.create({
-      email: email,
-      password: hashedpassword,
-      fullname: fullname,
-      phonenumber: phonenumber,
-      username: username,
-    });
-    return res.status(201).json({ message: "Signup succeeded" });
-  } catch (e) {
-     console.error("Signup error:", e);
-    res.status(500).json({
-      message: "Signup failed. Try again.",
-    });
-    
+    $or: [{ email }, { phonenumber }, { username }]
+  });
+  if (conflict) {
+    if (conflict.email === email) return res.status(409).json({ msg: "Email already registered" });
+    if (conflict.phonenumber === phonenumber) return res.status(409).json({ msg: "Phone number already registered" });
+    return res.status(409).json({ msg: "Username already taken" });
   }
 
- 
+  try {
+    // Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Send OTP directly
+    if (email) {
+      await otpmodel.create({
+        email,
+        phonenumber,
+        otp
+      })
+      await sendOTP(email, "email", otp);
+      
+    } else if (phonenumber) {
+       await otpmodel.create({
+        email,
+        phonenumber,
+        otp
+      })
+      await sendOTP(phonenumber, "phone", otp);
+    } else {
+      return res.status(400).json({ msg: "Email or phone is required for OTP" });
+    }
+
+    // For now, don’t save user until OTP is verified
+    // You might keep this in memory (like Redis) or send back to client for verification
+    return res.status(200).json({
+      message: "OTP sent. Please verify within 5 minutes.",
+      // Only for testing — remove in production
+      otp
+    });
+
+  } catch (e) {
+    console.error("Signup error:", e);
+    return res.status(500).json({ message: "Signup failed. Try again." });
+  }
 };
+
+
+
 
 const userlogin= async function (req, res) {
     const userloginschema= z.object({
@@ -148,6 +184,11 @@ const uservalidation=async function(req,res){
 
 const forgotpassword=async function(req,res){
   const { method, email, phonenumber } = req.body;
+  let transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.MAIL_USER, pass: process.env.MAIL_PASS },
+    });
+
   try {
     let user;
 
@@ -165,29 +206,33 @@ const forgotpassword=async function(req,res){
       return res.status(404).json({ message: "User not found" });
     }
 
-   const token = jwt.sign({ id: user._id }, process.env.JWT_RESET_SECRET, { expiresIn: "15m" });
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  await otpmodel.create({
+        email,
+        phonenumber,
+        otp
+      })
+  
+
  if (method === "email") {
-     const resetLink = `http://localhost:5173/reset-password/${token}`;
+
 
 
 await transporter.sendMail({
     from: process.env.MAIL_USER,
     to: user.email,
     subject: "Password Reset",
-    html: `<p>Click <a href="${resetLink}">here</a> to reset your password. Link valid for 15 minutes.</p>`
+       html: `<p>Your OTP is: <b>${otp}</b>. It expires in 15 minutes.</p>`
   });
 
   return res.status(200).json({ message: "Reset link sent to email" });
 }
   if (method === "sms") {
-    console.log("TWILIO_ACCOUNT_SID:", process.env.TWILIO_ACCOUNT_SID);
-console.log("TWILIO_AUTH_TOKEN:", process.env.TWILIO_AUTH_TOKEN);
-console.log("TWILIO_PHONE_NUMBER:", process.env.TWILIO_PHONE_NUMBER);
+    
 
       const resetMessage = `Reset your password using this token:\n${token}\nToken valid for 15 mins.`;
-      await sendOTP(phonenumber, resetMessage);
-
-      return res.status(200).json({ message: "Reset token sent via SMS" });
+     await sendOTP(phonenumber, `Your OTP is: ${otp}. It expires in 15 minutes.`);
+      return res.status(200).json({ message: "OTP sent via SMS" });
     }
   } catch (err) {
     console.error("Forgot password error:", err.message);
@@ -196,28 +241,55 @@ console.log("TWILIO_PHONE_NUMBER:", process.env.TWILIO_PHONE_NUMBER);
 };
 
 const verifyresettoken = async function(req,res){
-  const {token}=req.body;
-  try {
-    const decoded=jwt.verify(token,process.env.JWT_RESET_SECRET);
-    
-    res.status(200).json({ 
-      message: "token verified successfully Now you canenter the new password",
-      stateus:"success"
+  const { email, otp } = req.body;
+ try {
+    const record = await otpmodel.findOne({ email, otp });
 
-     });
-   
-    
-  } catch (error) {
-     console.error("Reset error:", error.message);
-     return res.status(400).json({ 
-      message: "Invalid or expired token" ,
-      stateus:"fail"
-    });
-    
+    if (!record) return res.status(400).json({ message: "Invalid OTP" });
+
+    if (record.expiresAt < new Date()) {
+      await otpmodel.deleteOne({ _id: record._id });
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    await otpmodel.deleteOne({ _id: record._id });
+    res.status(200).json({ message: "OTP verified" });
+  } catch (err) {
+    console.log(err.message)
+    res.status(500).json({ message: "Internal server error" });
+
   }
 }
+const verifyOTP = async (req, res) => {
+  const { email, phonenumber, otp, password, fullname, username } = req.body;
 
+  const record = await otpmodel.findOne({ 
+    $or: [{ email }, { phonenumber }],
+    otp
+  });
 
+  if (!record) {
+    return res.status(400).json({ msg: "Invalid OTP" });
+  }
+
+  if (record.expiresAt < new Date()) {
+    return res.status(400).json({ msg: "OTP expired" });
+  }
+
+  const hashedpassword = await bcrypt.hash(password, 5);
+  await usermodel.create({
+    email,
+    password: hashedpassword,
+    fullname,
+    phonenumber,
+    username,
+  });
+
+  // cleanup otp record
+  await otpmodel.deleteOne({ _id: record._id });
+
+  return res.status(201).json({ message: "Signup succeeded" });
+};
 const resetpassword = async function (req, res) {
   const resetPasswordSchema = z.object({
   newPassword: z
@@ -252,5 +324,5 @@ if (!parsed.success) {
 };
 
 module.exports = {
-  userlogin,userregister,uservalidation,forgotpassword,verifyresettoken,resetpassword
+  userlogin,userregister,uservalidation,forgotpassword,verifyresettoken,resetpassword,verifyOTP
 };

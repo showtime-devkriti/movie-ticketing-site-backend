@@ -15,11 +15,11 @@ require('dotenv').config();
 
 const initiatebooking=async function(req,res){
     const showtimeid=req.params.showtimeid;
-    const { seats, offercoupon } = req.body;
+    const { seats, offercoupon,userid } = req.body;
      if (!Array.isArray(seats) || seats.length === 0) {
     return res.status(400).json({ msg: "No seats selected" });
   }
- const userId = req.user.id;
+//  const userId = req.user.id;
 
     const showtime = await showtimemodel.findById(showtimeid);
 if (!showtime) return res.status(404).json({ msg: "Showtime not found" });
@@ -46,9 +46,12 @@ const screen = await screenmodel.findById(showtime.screenid);
             else if (currentlyLockedSeatsForShowtime.has(selectedSeatId)) {
                 const lockInfo = currentlyLockedSeatsForShowtime.get(selectedSeatId);
                 // If locked by someone else
-                if (lockInfo.userId !== userId) { // Assuming userId is passed via middleware
+                if (lockInfo.userId !==userid) { // Assuming userId is passed via middleware
                      bookedOrLockedSeats.push({ seatid: selectedSeatId, reason: "temporarily locked by another user" });
                 }
+                console.log(lockInfo.userId)
+                console.log(userid)
+
                 // If locked by this user, it's fine, proceed
             }
         }
