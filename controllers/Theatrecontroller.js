@@ -34,7 +34,7 @@ const getalltheatres = async function (req, res) {
 
     const { search } = req.query;
     if (search) {
-      filter.name = { $regex: search, $options: "i" };
+      filter.theatretitle = { $regex: search, $options: "i" };
     }
 
    const theatres = await adminmodel.find(filter)
