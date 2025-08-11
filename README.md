@@ -40,6 +40,7 @@ A React-based frontend for the Movie Ticket Booking system, allowing users to br
 * 💺 Interactive seat selection with class-based pricing.
 * 💳 Payment gateway integration.
 * 📱 Responsive design for desktop and mobile.
+* Admin panel for adding shows and screens.
 
 ---
 
