@@ -64,11 +64,20 @@ const userregister = async function (req, res) {
   }
 
   try {
+    
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Send OTP directly
-    if (email) {
+    if (phonenumber) {
+       await otpmodel.create({
+        email,
+        phonenumber,
+        otp
+      })
+      await sendOTP(phonenumber, "phone", otp);
+    }
+    else if (email) {
       await otpmodel.create({
         email,
         phonenumber,
@@ -76,14 +85,7 @@ const userregister = async function (req, res) {
       })
       await sendOTP(email, "email", otp);
       
-    } else if (phonenumber) {
-       await otpmodel.create({
-        email,
-        phonenumber,
-        otp
-      })
-      await sendOTP(phonenumber, "phone", otp);
-    } else {
+    }   else {
       return res.status(400).json({ msg: "Email or phone is required for OTP" });
     }
 
