@@ -1,6 +1,6 @@
 <div id="top" align="center">
 
-# Movie Ticket Booking Site - Frontend
+# SHOWTIME - Movie Ticket Booking Site - Frontend
 
 *Seamless Booking, Limitless Movie Experiences*
 
@@ -84,6 +84,13 @@ This project uses **Jest** + **React Testing Library** for unit and component te
 ```sh
 npm test
 ```
+
+---
+# Team Members
+
+* Vancha Manisharan Reddy
+* Gajula Rahul
+* Pendem Yashwanth Kumar
 
 ---
 
